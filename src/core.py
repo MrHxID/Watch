@@ -1,22 +1,14 @@
+import datetime as dt
 import time
 
+import numpy as np
 import pygame as pg
 import win32api
 import win32con
 import win32gui
 
-from . import (
-    AXLE_POS,
-    SECOND_POS,
-    DATE_POS,
-    BLIT_OFFSET,
-    BG,
-    CLOCK,
-    DT,
-    FPS,
-    SCREEN,
-    running,
-)
+from . import (AXLE_POS, BG, BLIT_OFFSET, CLOCK, DATE_POS, DT, FPS, SCREEN,
+               SECOND_POS, running)
 from . import sprites as spr
 from . import utils as u
 
@@ -40,13 +32,14 @@ def main():
 
     def draw_watch(all=False):
         dirty_rects = []
+        datetime = dt.datetime.now()
 
         for r in u.all.values():
             dirty_rects.append(r.rect.copy())
             SCREEN.blit(BG, r.rect, r.rect)
 
         for r in u.all.values():
-            r.update(DT)
+            r.update(DT, datetime=datetime)
             dirty_rects.append(r.rect.copy())
             SCREEN.blit(r.image, r.rect)
 

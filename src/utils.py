@@ -1,6 +1,7 @@
+import datetime as dt
+
 import numpy as np
 import pygame as pg
-import datetime
 
 from . import AXLE_POS, DATE_POS, SECOND_POS
 from . import sprites as spr
@@ -66,8 +67,8 @@ class ClockHand(BaseRender):
         assert type in ("hour", "minute", "second"), f"Invalid type parameter: {type}"
         self.type = type
 
-    def update(self, dt):
-        time = datetime.datetime.now()
+    def update(self, dt, **kwargs):
+        time = kwargs.get("datetime")
 
         self.angle = 0
 
@@ -118,11 +119,11 @@ class Date(BaseRender):
         priority: int = 0,
         **kwargs,
     ):
-        sprite = date(datetime.date.today().day)
+        sprite = date(dt.date.today().day)
         super().__init__(surface, sprite, position, priority, **kwargs)
 
-    def update(self, dt):
-        day = datetime.date.today().day
+    def update(self, dt, **kwargs):
+        day = kwargs.get("datetime").day
 
         self.image = date(day)
 
