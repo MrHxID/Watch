@@ -5,8 +5,18 @@ import win32api
 import win32con
 import win32gui
 
-from . import (AXLE_POS, BG, BLIT_OFFSET, CLOCK, DATE_POS, DT, FPS, SCREEN,
-               running)
+from . import (
+    AXLE_POS,
+    SECOND_POS,
+    DATE_POS,
+    BLIT_OFFSET,
+    BG,
+    CLOCK,
+    DT,
+    FPS,
+    SCREEN,
+    running,
+)
 from . import sprites as spr
 from . import utils as u
 
@@ -45,8 +55,29 @@ def main():
         else:
             pg.display.update(dirty_rects)
 
-    u.ClockHand(SCREEN, spr.HOUR_HAND, AXLE_POS + BLIT_OFFSET, "hour", 0)
-    u.BaseRender(SCREEN, u.date(18), DATE_POS + BLIT_OFFSET, 0, anchor = "topleft")
+    hour = u.ClockHand(SCREEN, spr.HOUR_HAND, AXLE_POS + BLIT_OFFSET, "hour", 2)
+    minute = u.ClockHand(SCREEN, spr.MINUTE_HAND, AXLE_POS + BLIT_OFFSET, "minute", 4)
+    u.ClockHand(SCREEN, spr.SECONDS_HAND, SECOND_POS + BLIT_OFFSET, "second", 0)
+    # u.BaseRender(SCREEN, u.date(18), DATE_POS + BLIT_OFFSET, 0, anchor="topleft")
+    u.Shadow(
+        SCREEN,
+        spr.HOUR_HAND_SHADOW,
+        AXLE_POS + BLIT_OFFSET,
+        "hour",
+        hour,
+        1,
+        offset=(0, 5),
+    )
+    u.Shadow(
+        SCREEN,
+        spr.MINUTE_HAND_SHADOW,
+        AXLE_POS + BLIT_OFFSET,
+        "minute",
+        minute,
+        3,
+        offset=(0, 10),
+    )
+    u.Date(SCREEN, None, DATE_POS + BLIT_OFFSET, 0, anchor="topleft")
 
     oldWndProc = win32gui.SetWindowLong(
         pg.display.get_wm_info()["window"],

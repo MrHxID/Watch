@@ -28,7 +28,8 @@ DT = 1 / FPS
 BLIT_OFFSET = np.array((0, -26))
 
 AXLE_POS = np.array((957, 536))
-SECOND_POS = np.array((...))
+SECOND_POS = np.array((956, 716))
+print(SECOND_POS)
 DATE_POS = np.array((1287 + 10, 504 + 7))
 
 BG.blit(spr.CASING, BLIT_OFFSET)
