@@ -5,8 +5,8 @@ import numpy as np
 try:
     path = Path(__file__)
     _sheet = pg.image.load(path.parent.parent.joinpath("assets", "Sprites.png"))
-except:
-    raise FileNotFoundError("Could not find the sprite sheet.")
+except FileNotFoundError as err:
+    raise FileNotFoundError(f"Could not find the sprite sheet: {''.join(err.args)}")
 
 
 def load_sprite(*rect: pg.Rect, sheet=_sheet, transparent: bool = True):

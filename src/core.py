@@ -1,10 +1,21 @@
 import pygame as pg
-from . import sprites as spr, running, CLOCK, FPS, SCREEN, BLIT_OFFSET
+import time
+
+from . import (
+    sprites as spr,
+    utils as u,
+    running,
+    CLOCK,
+    FPS,
+    SCREEN,
+    BG,
+    BLIT_OFFSET,
+    DT,
+)
 
 
 def main():
     global running
-    SCREEN.blit(spr.CASING, (0, 0) + BLIT_OFFSET)
 
     while running:
         events = pg.event.get()
@@ -17,10 +28,16 @@ def main():
                 if ev.key == pg.K_ESCAPE:
                     running = False
 
-        # SCREEN.fill("#ff0000")
-        # print(SCREEN.get_size())
+        dirty_rects = []
 
-        pg.display.flip()
+        for r in u.all.values():
+            dirty_rects.append(r.rect.copy())
+            SCREEN.blit(BG, r.rect, r.rect)
+
+        for r in u.all.values():
+            r.update(DT)
+            dirty_rects.append(r.rect.copy())
+            SCREEN.blit(r.image, r.rect)
 
         CLOCK.tick(FPS)
 
