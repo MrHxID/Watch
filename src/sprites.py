@@ -9,12 +9,12 @@ except FileNotFoundError as err:
     raise FileNotFoundError(f"Could not find the sprite sheet: {''.join(err.args)}")
 
 
-def load_sprite(*rect: pg.Rect, sheet=_sheet, transparent: bool = True):
+def load_sprite(*rect, sheet=_sheet, transparent: bool = True):
     rect = pg.Rect(*rect)
 
     flags = pg.SRCALPHA * transparent
     sprite = pg.Surface(rect.size, flags)
-    sprite.blit(sheet, rect)
+    sprite.blit(sheet, (0, 0), rect)
 
     return sprite
 
@@ -37,5 +37,15 @@ N_7 = load_sprite(3607, 0, 39, 56)
 N_8 = load_sprite(3334, 57, 39, 56)
 N_9 = load_sprite(3373, 57, 39, 56)
 
-AXLE_POS = np.array((957, 536))
-DATE_POS = np.array((1287 + 10, 504 + 9))
+NUMBERS: dict[str, pg.Surface] = {
+    "0": N_0,
+    "1": N_1,
+    "2": N_2,
+    "3": N_3,
+    "4": N_4,
+    "5": N_5,
+    "6": N_6,
+    "7": N_7,
+    "8": N_8,
+    "9": N_9,
+}
