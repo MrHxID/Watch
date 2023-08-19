@@ -56,6 +56,20 @@ def main(ticking=False):
     def draw_watch(all=False, no_update=False):
         nonlocal sleeping
         if sleeping:
+            dirty_rects = []
+
+            for id in u.buttons:
+                b = u.all[id]
+                dirty_rects.append(b.rect.copy())
+                SCREEN.blit(BG, b.rect, b.rect)
+
+            for id in u.buttons:
+                b = u.all[id]
+                b.update(DT)
+                dirty_rects.append(b.rect.copy())
+                SCREEN.blit(b.image, b.rect)
+
+            pg.display.update(dirty_rects)
             return
 
         dirty_rects = []
@@ -129,7 +143,16 @@ def main(ticking=False):
     )
     u.Date(SCREEN, None, DATE_POS + BLIT_OFFSET, 0, anchor="topleft")
 
-    u.Button(SCREEN, spr.BUTTON, (300, 800), 0, command=sleep, text="Schlafen")
+    u.Button(
+        SCREEN,
+        spr.B_NORMAL,
+        (300, 800),
+        0,
+        command=sleep,
+        text="Schlafen",
+        asprite=spr.B_ACTIVE,
+        atext="Wecken",
+    )
 
     oldWndProc = win32gui.SetWindowLong(
         pg.display.get_wm_info()["window"],

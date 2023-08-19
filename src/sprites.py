@@ -50,5 +50,5 @@ NUMBERS: dict[str, pg.Surface] = {
     "9": N_9,
 }
 
-BUTTON = pg.Surface((300, 50))
-BUTTON.fill("#aa0000")
+B_NORMAL = load_sprite(0, 1080, 300, 50)
+B_ACTIVE = load_sprite(300, 1080, 300, 50)
