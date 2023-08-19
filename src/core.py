@@ -49,13 +49,27 @@ def wndProc(oldWndProc, draw_callback, hWnd, message, wParam, lParam):
 
 
 def main(ticking=False):
-    global running
+    global running, DT
 
     sleeping = False
 
     def draw_watch(all=False, no_update=False):
         nonlocal sleeping
         if sleeping:
+            dirty_rects = []
+
+            for id in u.buttons:
+                b = u.all[id]
+                dirty_rects.append(b.rect.copy())
+                SCREEN.blit(BG, b.rect, b.rect)
+
+            for id in u.buttons:
+                b = u.all[id]
+                b.update(DT)
+                dirty_rects.append(b.rect.copy())
+                SCREEN.blit(b.image, b.rect)
+
+            pg.display.update(dirty_rects)
             return
 
         dirty_rects = []
@@ -129,13 +143,24 @@ def main(ticking=False):
     )
     u.Date(SCREEN, None, DATE_POS + BLIT_OFFSET, 0, anchor="topleft")
 
-    u.Button(SCREEN, spr.BUTTON, (300, 800), 0, command=sleep, text="Schlafen")
+    u.Button(
+        SCREEN,
+        spr.B_NORMAL,
+        (300, 800),
+        0,
+        command=sleep,
+        text="Schlafen",
+        asprite=spr.B_ACTIVE,
+        atext="Wecken",
+    )
 
     oldWndProc = win32gui.SetWindowLong(
         pg.display.get_wm_info()["window"],
         win32con.GWL_WNDPROC,
         lambda *args: wndProc(oldWndProc, draw_watch, *args),
     )
+
+    timing = []
 
     while running:
         events = pg.event.get()
@@ -158,6 +183,13 @@ def main(ticking=False):
 
         draw_watch()
 
-        CLOCK.tick(FPS)
+        DT = 0.001 * CLOCK.tick(FPS)
+
+        timing.append(DT)
+        
+
+    mean_dt = np.mean(timing)
+    mean_fps = 1 / mean_dt
+    print(mean_fps)
 
     pg.quit()

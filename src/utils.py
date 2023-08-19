@@ -158,16 +158,34 @@ class Button(BaseRender):
         self.cargs = kwargs.get("cargs", ())
         self.ckwargs = kwargs.get("ckwargs", {})
         self.enabled = kwargs.get("enabled", True)
+        self.activated = kwargs.get("activated", False)
 
-        self.text = kwargs.get("text", "")
-        self.font = kwargs.get("font", pg.font.SysFont("Arial", 30))
+        text = kwargs.get("text", "")
+        atext = kwargs.get("atext", text)
+        font = kwargs.get("font", pg.font.SysFont("Arial", 30))
 
-        text_surface: pg.Surface = self.font.render(self.text, True, "#000000")
+        text_surface: pg.Surface = font.render(text, True, "#000000")
+        atext_surface = font.render(atext, True, "#000000")
         text_pos = 0.5 * np.array(self.image.get_size())
         text_rect = text_surface.get_rect(center=text_pos)
+        atext_rect = atext_surface.get_rect(center=text_pos)
 
         self.sprite.blit(text_surface, text_rect)
+        self.asprite = kwargs.get("asprite", self.sprite)
+        self.asprite.blit(atext_surface, atext_rect)
+        self._rect = self.sprite.get_rect(**self._true_pos)
+        self._arect = self.asprite.get_rect(**self._true_pos)
+
         self.image = self.sprite.copy()
+
+        self.staged_changes = {}
+        self.modes = {
+            "normal": {"sprite": self.sprite, "rect": self._rect, "activated": False},
+            "active": {"sprite": self.asprite, "rect": self._arect, "activated": True},
+        }
+
+        if self.activated:
+            self.set_mode("active")
 
         buttons.append(self._id)
 
@@ -177,6 +195,22 @@ class Button(BaseRender):
 
         if self.rect.collidepoint(position):
             self.command(*self.cargs, **self.ckwargs)
+
+            if self.activated:
+                self.set_mode("normal")
+            else:
+                self.set_mode("active")
+
+    def set_mode(self, mode: str):
+        self.staged_changes.update(self.modes[mode])
+
+    def update(self, dt, **kwargs):
+        for attr in self.staged_changes:
+            setattr(self, attr, self.staged_changes[attr])
+
+        self.image = self.sprite.copy()
+
+        return super().update(dt, **kwargs)
 
 
 def date(date: int):
