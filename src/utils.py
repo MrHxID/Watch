@@ -3,7 +3,6 @@ import datetime as dt
 import numpy as np
 import pygame as pg
 
-from . import AXLE_POS, DATE_POS, SECOND_POS
 from . import sprites as spr
 
 
@@ -190,6 +189,18 @@ def date(date: int):
     surface.blit(spr.NUMBERS[temp[1]], (39, 0))
 
     return surface
+
+
+def flatten(array: list | tuple | set):
+    if not isinstance(array, (list, tuple)):
+        return [array]
+
+    flat_list = []
+
+    for i in array:
+        flat_list.extend(flatten(i))
+
+    return type(array)(flat_list)
 
 
 all: dict[int, BaseRender] = {}
