@@ -3,24 +3,35 @@ import time
 
 import numpy as np
 import pygame as pg
-import win32api
 import win32con
 import win32gui
+import os
 
-from . import (
-    AXLE_POS,
-    BG,
-    BLIT_OFFSET,
-    CLOCK,
-    DATE_POS,
-    DT,
-    FPS,
-    SCREEN,
-    SECOND_POS,
-    running,
-)
 from . import sprites as spr
 from . import utils as u
+
+SCREEN = pg.display.set_mode((1920, 1017), pg.RESIZABLE)
+win32gui.ShowWindow(pg.display.get_wm_info()["window"], win32con.SW_MAXIMIZE)
+BG = pg.Surface(SCREEN.get_size())
+
+# pg.display.set_mode((1920, 1017))
+
+
+os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
+
+running = True
+CLOCK = pg.time.Clock()
+FPS = 30
+DT = 1 / FPS
+BLIT_OFFSET = np.array((0, -26))
+
+AXLE_POS = np.array((957, 536))
+SECOND_POS = np.array((956, 717))
+DATE_POS = np.array((1287 + 10, 504 + 7))
+
+BG.blit(spr.CASING, BLIT_OFFSET)
+SCREEN.blit(BG, (0, 0))
+pg.display.flip()
 
 
 def wndProc(oldWndProc, draw_callback, hWnd, message, wParam, lParam):
@@ -48,6 +59,7 @@ def main(ticking=False):
             return
 
         dirty_rects = []
+        dirty_rects.append([pg.Rect(0, 0, 10, 10), pg.Rect(10, 0, 20, 20)])
         datetime = dt.datetime.now()
 
         for r in u.all.values():
@@ -61,6 +73,8 @@ def main(ticking=False):
 
         if no_update:
             return
+
+        dirty_rects = u.flatten(dirty_rects)
 
         if all:
             pg.display.flip()
