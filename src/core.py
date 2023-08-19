@@ -7,8 +7,18 @@ import win32api
 import win32con
 import win32gui
 
-from . import (AXLE_POS, BG, BLIT_OFFSET, CLOCK, DATE_POS, DT, FPS, SCREEN,
-               SECOND_POS, running)
+from . import (
+    AXLE_POS,
+    BG,
+    BLIT_OFFSET,
+    CLOCK,
+    DATE_POS,
+    DT,
+    FPS,
+    SCREEN,
+    SECOND_POS,
+    running,
+)
 from . import sprites as spr
 from . import utils as u
 
@@ -27,7 +37,7 @@ def wndProc(oldWndProc, draw_callback, hWnd, message, wParam, lParam):
     return win32gui.CallWindowProc(oldWndProc, hWnd, message, wParam, lParam)
 
 
-def main():
+def main(ticking=False):
     global running
 
     def draw_watch(all=False):
@@ -48,9 +58,15 @@ def main():
         else:
             pg.display.update(dirty_rects)
 
-    hour = u.ClockHand(SCREEN, spr.HOUR_HAND, AXLE_POS + BLIT_OFFSET, "hour", 2)
-    minute = u.ClockHand(SCREEN, spr.MINUTE_HAND, AXLE_POS + BLIT_OFFSET, "minute", 4)
-    u.ClockHand(SCREEN, spr.SECONDS_HAND, SECOND_POS + BLIT_OFFSET, "second", 0)
+    hour = u.ClockHand(
+        SCREEN, spr.HOUR_HAND, AXLE_POS + BLIT_OFFSET, "hour", 2, ticking=ticking
+    )
+    minute = u.ClockHand(
+        SCREEN, spr.MINUTE_HAND, AXLE_POS + BLIT_OFFSET, "minute", 4, ticking=ticking
+    )
+    u.ClockHand(
+        SCREEN, spr.SECONDS_HAND, SECOND_POS + BLIT_OFFSET, "second", 0, ticking=ticking
+    )
     # u.BaseRender(SCREEN, u.date(18), DATE_POS + BLIT_OFFSET, 0, anchor="topleft")
     u.Shadow(
         SCREEN,

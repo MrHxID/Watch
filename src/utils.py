@@ -66,6 +66,8 @@ class ClockHand(BaseRender):
         super().__init__(surface, sprite, position, priority, **kwargs)
         assert type in ("hour", "minute", "second"), f"Invalid type parameter: {type}"
         self.type = type
+        self.ticking = kwargs.get("ticking", False)
+        self.shadow = None
 
     def update(self, dt, **kwargs):
         time = kwargs.get("datetime")
@@ -75,9 +77,15 @@ class ClockHand(BaseRender):
         if self.type == "hour":
             self.angle = 30 * time.hour + 0.5 * time.minute + 0.008333333 * time.second
         elif self.type == "minute":
-            self.angle = 6 * time.minute + 0.1 * time.second + 1e-7 * time.microsecond
+            self.angle = (
+                6 * time.minute
+                + 0.1 * time.second
+                + (0 if self.ticking else 1e-7 * time.microsecond)
+            )
         elif self.type == "second":
-            self.angle = 6 * time.second + 6e-6 * time.microsecond
+            self.angle = 6 * time.second + (
+                0 if self.ticking else 6e-6 * time.microsecond
+            )
         else:
             # Never happens
             raise ValueError("wtf")
@@ -85,6 +93,10 @@ class ClockHand(BaseRender):
         self.angle = (
             -self.angle
         )  # negative angle because pygame rotates counter-clockwise
+
+        if self.shadow is not None:
+            self.shadow.angle = self.angle
+            self.shadow._update(dt)
 
         self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
 
@@ -103,11 +115,16 @@ class Shadow(ClockHand):
         **kwargs,
     ):
         super().__init__(surface, sprite, position, type, priority, **kwargs)
-        self.parent = parent
+        parent.shadow = self
 
-    # def update(self, dt):
-    #     self.image = pg.transform.rotozoom(self.sprite, self.parent.angle, 1)
-    #     self.rect = self.image.get_rect(**self._true_pos)
+    def update(self, dt, **kwargs):
+        # self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
+        # self.rect = self.image.get_rect(**self._true_pos)
+        return
+
+    def _update(self, dt):
+        self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
+        self.rect = self.image.get_rect(**self._true_pos)
 
 
 class Date(BaseRender):
