@@ -49,3 +49,6 @@ NUMBERS: dict[str, pg.Surface] = {
     "8": N_8,
     "9": N_9,
 }
+
+BUTTON = pg.Surface((300, 50))
+BUTTON.fill("#aa0000")

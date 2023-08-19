@@ -49,7 +49,7 @@ class BaseRender:
 
     GenID = _generate_id()
 
-    def update(self, dt):
+    def update(self, dt, *args, **kwargs):
         return
 
 
@@ -145,6 +145,31 @@ class Date(BaseRender):
         self.image = date(day)
 
 
+class Button(BaseRender):
+    def __init__(
+        self,
+        surface: pg.Surface,
+        sprite: pg.Surface | None,
+        position: tuple[int, int],
+        priority: int = 0,
+        **kwargs,
+    ):
+        super().__init__(surface, sprite, position, priority, **kwargs)
+        self.command = kwargs.get("command", lambda *_, **__: None)
+        self.cargs = kwargs.get("cargs", ())
+        self.ckwargs = kwargs.get("ckwargs", {})
+        self.enabled = kwargs.get("enabled", True)
+
+        buttons.append(self._id)
+
+    def check_input(self, position):
+        if not self.enabled:
+            return
+
+        if self.rect.collidepoint(position):
+            self.command(*self.cargs, **self.ckwargs)
+
+
 def date(date: int):
     temp = list(str(date))
     if len(temp) == 1:
@@ -158,3 +183,4 @@ def date(date: int):
 
 
 all: dict[int, BaseRender] = {}
+buttons: list[int] = []
