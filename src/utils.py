@@ -160,6 +160,16 @@ class Button(BaseRender):
         self.ckwargs = kwargs.get("ckwargs", {})
         self.enabled = kwargs.get("enabled", True)
 
+        self.text = kwargs.get("text", "")
+        self.font = kwargs.get("font", pg.font.SysFont("Arial", 30))
+
+        text_surface: pg.Surface = self.font.render(self.text, True, "#000000")
+        text_pos = 0.5 * np.array(self.image.get_size())
+        text_rect = text_surface.get_rect(center=text_pos)
+
+        self.sprite.blit(text_surface, text_rect)
+        self.image = self.sprite.copy()
+
         buttons.append(self._id)
 
     def check_input(self, position):
