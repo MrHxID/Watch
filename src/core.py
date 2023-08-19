@@ -40,7 +40,13 @@ def wndProc(oldWndProc, draw_callback, hWnd, message, wParam, lParam):
 def main(ticking=False):
     global running
 
-    def draw_watch(all=False):
+    sleeping = False
+
+    def draw_watch(all=False, no_update=False):
+        nonlocal sleeping
+        if sleeping:
+            return
+
         dirty_rects = []
         datetime = dt.datetime.now()
 
@@ -53,10 +59,31 @@ def main(ticking=False):
             dirty_rects.append(r.rect.copy())
             SCREEN.blit(r.image, r.rect)
 
+        if no_update:
+            return
+
         if all:
             pg.display.flip()
         else:
             pg.display.update(dirty_rects)
+
+    def sleep():
+        nonlocal sleeping
+        # global SCREEN, BG
+
+        if sleeping:
+            sleeping = False
+            SCREEN.blit(BG, (0, 0))
+            draw_watch(True, True)
+
+        else:
+            sleeping = True
+            overlay = pg.Surface(SCREEN.get_size(), pg.SRCALPHA)
+            overlay.fill("#ffffff")
+            overlay.set_alpha(100)
+            SCREEN.blit(overlay, (0, 0))
+
+        pg.display.flip()
 
     hour = u.ClockHand(
         SCREEN, spr.HOUR_HAND, AXLE_POS + BLIT_OFFSET, "hour", 2, ticking=ticking
@@ -88,6 +115,8 @@ def main(ticking=False):
     )
     u.Date(SCREEN, None, DATE_POS + BLIT_OFFSET, 0, anchor="topleft")
 
+    u.Button(SCREEN, spr.BUTTON, (300, 800), 0, command=sleep, text="Schlafen")
+
     oldWndProc = win32gui.SetWindowLong(
         pg.display.get_wm_info()["window"],
         win32con.GWL_WNDPROC,
@@ -104,6 +133,14 @@ def main(ticking=False):
             if ev.type == pg.KEYDOWN:
                 if ev.key == pg.K_ESCAPE:
                     running = False
+
+            pos = pg.mouse.get_pos()
+
+            for id in u.buttons:
+                b = u.all[id]
+                if ev.type == pg.MOUSEBUTTONUP:
+                    if ev.button == pg.BUTTON_LEFT:
+                        b.check_input(pos)
 
         draw_watch()
 
