@@ -5,6 +5,8 @@ import pygame as pg
 
 from . import sprites as spr
 
+from scipy.ndimage import convolve
+
 
 class BaseRender:
     def __init__(
@@ -24,7 +26,7 @@ class BaseRender:
 
         self.image = self.sprite.copy()
 
-        self.offset = np.array(kwargs.get("offset", np.array((0, 0))))
+        self.offset = np.array(kwargs.get("offset", np.array((0, 0))), dtype=float)
         self.position = position + self.offset
         self.priority = priority
         self._id = next(self.GenID)
@@ -67,11 +69,17 @@ class ClockHand(BaseRender):
         self.type = type
         self.ticking = kwargs.get("ticking", False)
         self.shadow = None
+        self.angle = 0
+
+        if self.type == "hour":
+            self.d_axle_center = 124
+        elif self.type == "minute":
+            self.d_axle_center = 203
+        elif self.type == "second":
+            self.d_axle_center = 43
 
     def update(self, dt, **kwargs):
         time = kwargs.get("datetime")
-
-        self.angle = 0
 
         if self.type == "hour":
             self.angle = 30 * time.hour + 0.5 * time.minute + 0.008333333 * time.second
@@ -89,17 +97,146 @@ class ClockHand(BaseRender):
             # Never happens
             raise ValueError("wtf")
 
-        self.angle = (
-            -self.angle
-        )  # negative angle because pygame rotates counter-clockwise
+        # self.angle = (
+        #     -self.angle
+        # )  # negative angle because pygame rotates counter-clockwise
 
         if self.shadow is not None:
             self.shadow.angle = self.angle
             self.shadow._update(dt)
 
-        self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
-
+        self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
+        # self.rect = self.image.get_rect(**self._true_pos)
         self.rect = self.image.get_rect(**self._true_pos)
+
+        offset_vec = pg.Vector2(0, -self.d_axle_center)
+
+        rotated_offset_vec = offset_vec.rotate(self.angle)
+        rotated_offset = np.array(rotated_offset_vec)
+
+        # self.rect.topleft += np.floor(rotated_offset)
+
+        # print(rotated_offset)
+
+        self.image, rect = self._shift(self.image, rotated_offset)
+
+        self.rect.topleft += np.array(rect.topleft)
+
+    @staticmethod
+    def _shift(image: pg.Surface, offset: tuple[float, float]):
+        size = np.array(image.get_size())
+        surface = pg.Surface(size + 1, pg.SRCALPHA)
+        surface.blit(image, (1, 1))
+
+        offset = np.array(offset, dtype=float)
+
+        px_offset = np.floor(offset)
+        sub_px_offset = offset % 1
+
+        off_x, off_y = sub_px_offset
+
+        kernel = np.array(
+            [
+                [(1 - off_x) * (1 - off_y), off_x * (1 - off_y)],
+                [(1 - off_x) * off_y, off_x * off_y],
+            ]
+        )
+
+        r = pg.surfarray.pixels_red(surface)
+        g = pg.surfarray.pixels_green(surface)
+        b = pg.surfarray.pixels_blue(surface)
+        a = pg.surfarray.pixels_alpha(surface)
+
+        true_r = r.transpose()
+        true_g = g.transpose()
+        true_b = b.transpose()
+        true_a = a.transpose()
+
+        convolve(true_r, kernel, true_r)
+        convolve(true_g, kernel, true_g)
+        convolve(true_b, kernel, true_b)
+        convolve(true_a, kernel, true_a)
+
+        r[:,:] = true_r.transpose()
+        g[:,:] = true_g.transpose()
+        b[:,:] = true_b.transpose()
+        a[:,:] = true_a.transpose()
+
+        rect = surface.get_rect(topleft=px_offset)
+
+        return (surface, rect)
+
+    # @staticmethod
+    # def _shift(image: pg.Surface, offset: tuple[float, float]):
+    #     offset = np.array(offset)
+
+    #     px_offset = np.floor(offset)
+    #     sub_px_offset = offset % 1
+
+    #     off_x: float
+    #     off_y: float
+    #     off_x, off_y = sub_px_offset
+
+    #     rgb = pg.surfarray.pixels3d(image)
+    #     a = pg.surfarray.pixels_alpha(image)
+
+    #     w, h = image.get_size()
+
+    #     pixels = np.zeros((w, h, 4))
+
+    #     pixels[:, :, :3] = rgb
+    #     pixels[:, :, 3] = a
+
+    #     # print(pixels)
+
+    #     surface = np.zeros((h + 2, w + 2, 4))
+
+    #     # intermediate surface array
+    #     surface[1 : h + 1, 1 : w + 1, :] = pixels.transpose((1, 0, 2))
+    #     # padded with the first and last row and column
+    #     surface[0, :, :3] = surface[1, :, :3]
+    #     surface[:, 0, :3] = surface[:, 1, :3]
+    #     surface[-1, :, :3] = surface[-2, :, :3]
+    #     surface[:, -1, :3] = surface[:, -2, :3]
+
+    #     sa = surface[:-1, :-1]
+    #     sb = surface[1:, :-1]
+    #     sc = surface[:-1, 1:]
+    #     sd = surface[1:, 1:]
+
+    #     # return surface array
+
+    #     s = (
+    #         sa * off_x * off_y
+    #         + sb * off_x * (1 - off_y)
+    #         + sc * (1 - off_x) * off_y
+    #         + sd * (1 - off_x) * (1 - off_y)
+    #     )
+
+    #     s = s.transpose((1, 0, 2))
+
+    #     # print(s.shape, (w + 1, h + 1, 4))
+
+    #     assert s.shape == (w + 1, h + 1, 4)
+
+    #     ret_surf = pg.Surface((w + 1, h + 1), pg.SRCALPHA)
+
+    #     ret_r = pg.surfarray.pixels_red(ret_surf)
+    #     ret_g = pg.surfarray.pixels_green(ret_surf)
+    #     ret_b = pg.surfarray.pixels_blue(ret_surf)
+    #     ret_a = pg.surfarray.pixels_alpha(ret_surf)
+
+    #     ret_r[:, :] = s[:, :, 0]
+    #     ret_g[:, :] = s[:, :, 1]
+    #     ret_b[:, :] = s[:, :, 2]
+    #     ret_a[:, :] = s[:, :, 3]
+
+
+    #     rect = ret_surf.get_rect(topleft=px_offset)
+
+    #     # print(rect)
+
+    #     return (ret_surf, rect)
 
 
 class Shadow(ClockHand):
@@ -122,7 +259,7 @@ class Shadow(ClockHand):
         return
 
     def _update(self, dt):
-        self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
+        self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
         self.rect = self.image.get_rect(**self._true_pos)
 
 
