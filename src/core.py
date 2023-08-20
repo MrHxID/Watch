@@ -160,6 +160,8 @@ def main(ticking=False):
         lambda *args: wndProc(oldWndProc, draw_watch, *args),
     )
 
+    timing = []
+
     while running:
         events = pg.event.get()
 
@@ -181,6 +183,10 @@ def main(ticking=False):
 
         draw_watch()
 
-        CLOCK.tick(FPS)
+        timing.append(0.001 * CLOCK.tick())
+
+    mean_dt = np.mean(timing)
+    mean_fps = 1 / mean_dt
+    print(mean_fps)
 
     pg.quit()
