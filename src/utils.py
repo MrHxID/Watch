@@ -122,6 +122,8 @@ class ClockHand(BaseRender):
 
         self.rect.topleft += np.array(rect.topleft)
 
+    # for more intuitive version: see src/test2.py -> shift_2
+
     @staticmethod
     def _shift(image: pg.Surface, offset: tuple[float, float]):
         size = np.array(image.get_size())
@@ -135,6 +137,7 @@ class ClockHand(BaseRender):
 
         off_x, off_y = sub_px_offset
 
+        # rotated 180 degrees upon use
         kernel = np.array(
             [
                 [(1 - off_x) * (1 - off_y), off_x * (1 - off_y)],
@@ -147,6 +150,9 @@ class ClockHand(BaseRender):
         b = pg.surfarray.pixels_blue(surface)
         a = pg.surfarray.pixels_alpha(surface)
 
+        # because pygames surface -> array swaps columns and rows
+        # true_* = array how you would intuitively think it should work
+        # i.e. true_*[0] == first row of image
         true_r = r.transpose()
         true_g = g.transpose()
         true_b = b.transpose()
@@ -157,86 +163,15 @@ class ClockHand(BaseRender):
         convolve(true_b, kernel, true_b)
         convolve(true_a, kernel, true_a)
 
-        r[:,:] = true_r.transpose()
-        g[:,:] = true_g.transpose()
-        b[:,:] = true_b.transpose()
-        a[:,:] = true_a.transpose()
+        # convert back
+        r[:, :] = true_r.transpose()
+        g[:, :] = true_g.transpose()
+        b[:, :] = true_b.transpose()
+        a[:, :] = true_a.transpose()
 
         rect = surface.get_rect(topleft=px_offset)
 
         return (surface, rect)
-
-    # @staticmethod
-    # def _shift(image: pg.Surface, offset: tuple[float, float]):
-    #     offset = np.array(offset)
-
-    #     px_offset = np.floor(offset)
-    #     sub_px_offset = offset % 1
-
-    #     off_x: float
-    #     off_y: float
-    #     off_x, off_y = sub_px_offset
-
-    #     rgb = pg.surfarray.pixels3d(image)
-    #     a = pg.surfarray.pixels_alpha(image)
-
-    #     w, h = image.get_size()
-
-    #     pixels = np.zeros((w, h, 4))
-
-    #     pixels[:, :, :3] = rgb
-    #     pixels[:, :, 3] = a
-
-    #     # print(pixels)
-
-    #     surface = np.zeros((h + 2, w + 2, 4))
-
-    #     # intermediate surface array
-    #     surface[1 : h + 1, 1 : w + 1, :] = pixels.transpose((1, 0, 2))
-    #     # padded with the first and last row and column
-    #     surface[0, :, :3] = surface[1, :, :3]
-    #     surface[:, 0, :3] = surface[:, 1, :3]
-    #     surface[-1, :, :3] = surface[-2, :, :3]
-    #     surface[:, -1, :3] = surface[:, -2, :3]
-
-    #     sa = surface[:-1, :-1]
-    #     sb = surface[1:, :-1]
-    #     sc = surface[:-1, 1:]
-    #     sd = surface[1:, 1:]
-
-    #     # return surface array
-
-    #     s = (
-    #         sa * off_x * off_y
-    #         + sb * off_x * (1 - off_y)
-    #         + sc * (1 - off_x) * off_y
-    #         + sd * (1 - off_x) * (1 - off_y)
-    #     )
-
-    #     s = s.transpose((1, 0, 2))
-
-    #     # print(s.shape, (w + 1, h + 1, 4))
-
-    #     assert s.shape == (w + 1, h + 1, 4)
-
-    #     ret_surf = pg.Surface((w + 1, h + 1), pg.SRCALPHA)
-
-    #     ret_r = pg.surfarray.pixels_red(ret_surf)
-    #     ret_g = pg.surfarray.pixels_green(ret_surf)
-    #     ret_b = pg.surfarray.pixels_blue(ret_surf)
-    #     ret_a = pg.surfarray.pixels_alpha(ret_surf)
-
-    #     ret_r[:, :] = s[:, :, 0]
-    #     ret_g[:, :] = s[:, :, 1]
-    #     ret_b[:, :] = s[:, :, 2]
-    #     ret_a[:, :] = s[:, :, 3]
-
-
-    #     rect = ret_surf.get_rect(topleft=px_offset)
-
-    #     # print(rect)
-
-    #     return (ret_surf, rect)
 
 
 class Shadow(ClockHand):
