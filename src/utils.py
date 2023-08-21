@@ -5,6 +5,8 @@ import pygame as pg
 
 from . import sprites as spr
 
+from scipy.ndimage import convolve
+
 
 class BaseRender:
     def __init__(
@@ -24,7 +26,7 @@ class BaseRender:
 
         self.image = self.sprite.copy()
 
-        self.offset = np.array(kwargs.get("offset", np.array((0, 0))))
+        self.offset = np.array(kwargs.get("offset", np.array((0, 0))), dtype=float)
         self.position = position + self.offset
         self.priority = priority
         self._id = next(self.GenID)
@@ -66,12 +68,25 @@ class ClockHand(BaseRender):
         assert type in ("hour", "minute", "second"), f"Invalid type parameter: {type}"
         self.type = type
         self.ticking = kwargs.get("ticking", False)
-        self.shadow = None
+        self.shadow: None | Shadow = None
+        self.angle = 0
+
+        if self.type == "hour":
+            self.d_axle_center = 124
+            self.border = "#cbcbcb"
+
+        elif self.type == "minute":
+            self.d_axle_center = 203
+            self.border = "#cbcbcb"
+
+        elif self.type == "second":
+            self.d_axle_center = 43
+            self.border = "#949494"
+
+        self.alpha_threshhold = 150
 
     def update(self, dt, **kwargs):
         time = kwargs.get("datetime")
-
-        self.angle = 0
 
         if self.type == "hour":
             self.angle = 30 * time.hour + 0.5 * time.minute + 0.008333333 * time.second
@@ -89,17 +104,74 @@ class ClockHand(BaseRender):
             # Never happens
             raise ValueError("wtf")
 
-        self.angle = (
-            -self.angle
-        )  # negative angle because pygame rotates counter-clockwise
-
         if self.shadow is not None:
             self.shadow.angle = self.angle
-            self.shadow._update(dt)
 
-        self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
+        # negative angle because pygame rotates counter-clockwise
+        self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
+
+        offset_vec = pg.Vector2(0, -self.d_axle_center)
+
+        rotated_offset_vec = offset_vec.rotate(self.angle)
+
+        self.image, offset = self._shift(
+            self.image, rotated_offset_vec, self.border, self.alpha_threshhold
+        )
 
         self.rect = self.image.get_rect(**self._true_pos)
+        self.rect.topleft += offset
+
+    # for first version: see src/test2.py -> shift_2
+    @staticmethod
+    def _shift(
+        image: pg.Surface,
+        offset: tuple[float, float],
+        border_color: pg.Color | None = None,
+        alpha_threshhold: int = 254,
+    ):
+        size = np.array(image.get_size())
+        surface = pg.Surface(size + 1, pg.SRCALPHA)
+        surface.blit(image, (1, 1))
+
+        offset = np.array(offset, dtype=float)
+
+        px_offset = np.floor(offset)
+        sub_px_offset = offset % 1
+
+        off_x, off_y = sub_px_offset
+
+        # rotated 180 degrees upon use
+        kernel = np.array(
+            [
+                [(1 - off_x) * (1 - off_y), (1 - off_x) * off_y],
+                [off_x * (1 - off_y), off_x * off_y],
+            ]
+        )
+
+        r = pg.surfarray.pixels_red(surface)
+        g = pg.surfarray.pixels_green(surface)
+        b = pg.surfarray.pixels_blue(surface)
+        a = pg.surfarray.pixels_alpha(surface)
+
+        if border_color is not None:
+            border_color = pg.Color(border_color)
+
+            indices = a <= alpha_threshhold
+
+            r[:, :] = np.where(indices, border_color.r, r)
+            g[:, :] = np.where(indices, border_color.g, g)
+            b[:, :] = np.where(indices, border_color.b, b)
+
+        # because pygames surface -> array swaps columns and rows
+        # true_* = array how you would intuitively think it should work
+        # i.e. true_*[0] == first row of image
+
+        convolve(r, kernel, r)
+        convolve(g, kernel, g)
+        convolve(b, kernel, b)
+        convolve(a, kernel, a)
+
+        return (surface, px_offset)
 
 
 class Shadow(ClockHand):
@@ -114,16 +186,24 @@ class Shadow(ClockHand):
         **kwargs,
     ):
         super().__init__(surface, sprite, position, type, priority, **kwargs)
-        parent.shadow = self
+        self.parent = parent
+        self.parent.shadow = self
+        self.angle = 0
+        self.border = "#878787"
+        self.alpha_threshhold = 0
 
     def update(self, dt, **kwargs):
-        # self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
-        # self.rect = self.image.get_rect(**self._true_pos)
-        return
+        self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
 
-    def _update(self, dt):
-        self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
+        offset_vec = pg.Vector2(0, -self.d_axle_center)
+        rotated_offset_vec = offset_vec.rotate(self.angle)
+
+        self.image, offset = self._shift(
+            self.image, rotated_offset_vec, self.border, self.alpha_threshhold
+        )
+
         self.rect = self.image.get_rect(**self._true_pos)
+        self.rect.topleft += offset
 
 
 class Date(BaseRender):

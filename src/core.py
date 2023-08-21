@@ -22,7 +22,9 @@ os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
 running = True
 CLOCK = pg.time.Clock()
 FPS = 30
-DT = 1 / FPS
+DT = 0
+if FPS != 0:
+    DT = 1 / FPS
 BLIT_OFFSET = np.array((0, -26))
 
 AXLE_POS = np.array((957, 536))
@@ -179,14 +181,13 @@ def main(ticking=False):
                 b = u.all[id]
                 if ev.type == pg.MOUSEBUTTONUP:
                     if ev.button == pg.BUTTON_LEFT:
-                        b.check_input(pos)
+                        b.check_input(ev.pos)
 
         draw_watch()
 
         DT = 0.001 * CLOCK.tick(FPS)
 
         timing.append(DT)
-        
 
     mean_dt = np.mean(timing)
     mean_fps = 1 / mean_dt
