@@ -21,7 +21,7 @@ os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
 
 running = True
 CLOCK = pg.time.Clock()
-FPS = 30
+FPS = 60
 DT = 1 / FPS
 BLIT_OFFSET = np.array((0, -26))
 
@@ -123,24 +123,24 @@ def main(ticking=False):
         SCREEN, spr.SECONDS_HAND, SECOND_POS + BLIT_OFFSET, "second", 0, ticking=ticking
     )
     # u.BaseRender(SCREEN, u.date(18), DATE_POS + BLIT_OFFSET, 0, anchor="topleft")
-    # u.Shadow(
-    #     SCREEN,
-    #     spr.HOUR_HAND_SHADOW,
-    #     AXLE_POS + BLIT_OFFSET,
-    #     "hour",
-    #     hour,
-    #     1,
-    #     offset=(0, 5),
-    # )
-    # u.Shadow(
-    #     SCREEN,
-    #     spr.MINUTE_HAND_SHADOW,
-    #     AXLE_POS + BLIT_OFFSET,
-    #     "minute",
-    #     minute,
-    #     3,
-    #     offset=(0, 10),
-    # )
+    u.Shadow(
+        SCREEN,
+        spr.HOUR_HAND_SHADOW,
+        AXLE_POS + BLIT_OFFSET,
+        "hour",
+        hour,
+        1,
+        offset=(0, 5),
+    )
+    u.Shadow(
+        SCREEN,
+        spr.MINUTE_HAND_SHADOW,
+        AXLE_POS + BLIT_OFFSET,
+        "minute",
+        minute,
+        3,
+        offset=(0, 10),
+    )
     u.Date(SCREEN, None, DATE_POS + BLIT_OFFSET, 0, anchor="topleft")
 
     u.Button(

@@ -107,20 +107,23 @@ class ClockHand(BaseRender):
 
         self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
         # self.rect = self.image.get_rect(**self._true_pos)
-        self.rect = self.image.get_rect(**self._true_pos)
 
         offset_vec = pg.Vector2(0, -self.d_axle_center)
 
         rotated_offset_vec = offset_vec.rotate(self.angle)
-        rotated_offset = np.array(rotated_offset_vec)
 
         # self.rect.topleft += np.floor(rotated_offset)
 
         # print(rotated_offset)
 
-        self.image, rect = self._shift(self.image, rotated_offset)
+        self.image, offset = self._shift(self.image, rotated_offset_vec)
 
-        self.rect.topleft += np.array(rect.topleft)
+        # print(rect, self.rect)
+
+        self.rect = self.image.get_rect(**self._true_pos)
+        self.rect.topleft += offset
+
+        # self.rect.topleft += np.array(rect.topleft)
 
     # for more intuitive version: see src/test2.py -> shift_2
 
@@ -136,6 +139,9 @@ class ClockHand(BaseRender):
         sub_px_offset = offset % 1
 
         off_x, off_y = sub_px_offset
+
+        pre_kernel = np.ones((3, 3)) / 9
+        # print(pre_kernel)
 
         # rotated 180 degrees upon use
         kernel = np.array(
@@ -159,9 +165,7 @@ class ClockHand(BaseRender):
         convolve(b, kernel, b)
         convolve(a, kernel, a)
 
-        rect = surface.get_rect(topleft=px_offset)
-
-        return (surface, rect)
+        return (surface, px_offset)
 
 
 class Shadow(ClockHand):
@@ -176,7 +180,8 @@ class Shadow(ClockHand):
         **kwargs,
     ):
         super().__init__(surface, sprite, position, type, priority, **kwargs)
-        parent.shadow = self
+        self.parent = parent
+        self.parent.shadow = self
 
     def update(self, dt, **kwargs):
         # self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
@@ -185,7 +190,14 @@ class Shadow(ClockHand):
 
     def _update(self, dt):
         self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
+
+        offset_vec = pg.Vector2(0, -self.d_axle_center)
+        rotated_offset_vec = offset_vec.rotate(self.angle)
+
+        self.image, offset = self._shift(self.image, rotated_offset_vec)
+
         self.rect = self.image.get_rect(**self._true_pos)
+        self.rect.topleft += offset
 
 
 class Date(BaseRender):
