@@ -140,8 +140,8 @@ class ClockHand(BaseRender):
         # rotated 180 degrees upon use
         kernel = np.array(
             [
-                [(1 - off_x) * (1 - off_y), off_x * (1 - off_y)],
-                [(1 - off_x) * off_y, off_x * off_y],
+                [(1 - off_x) * (1 - off_y), (1 - off_x) * off_y],
+                [off_x * (1 - off_y), off_x * off_y],
             ]
         )
 
@@ -153,21 +153,11 @@ class ClockHand(BaseRender):
         # because pygames surface -> array swaps columns and rows
         # true_* = array how you would intuitively think it should work
         # i.e. true_*[0] == first row of image
-        true_r = r.transpose()
-        true_g = g.transpose()
-        true_b = b.transpose()
-        true_a = a.transpose()
 
-        convolve(true_r, kernel, true_r)
-        convolve(true_g, kernel, true_g)
-        convolve(true_b, kernel, true_b)
-        convolve(true_a, kernel, true_a)
-
-        # convert back
-        r[:, :] = true_r.transpose()
-        g[:, :] = true_g.transpose()
-        b[:, :] = true_b.transpose()
-        a[:, :] = true_a.transpose()
+        convolve(r, kernel, r)
+        convolve(g, kernel, g)
+        convolve(b, kernel, b)
+        convolve(a, kernel, a)
 
         rect = surface.get_rect(topleft=px_offset)
 
