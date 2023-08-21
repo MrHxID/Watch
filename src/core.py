@@ -1,14 +1,18 @@
 import datetime as dt
-import time
+import os
 
 import numpy as np
 import pygame as pg
 import win32con
 import win32gui
-import os
+
+import src
 
 from . import sprites as spr
 from . import utils as u
+from . import settings
+
+_default_settings = settings.default()
 
 SCREEN = pg.display.set_mode((1920, 1017), pg.RESIZABLE)
 win32gui.ShowWindow(pg.display.get_wm_info()["window"], win32con.SW_MAXIMIZE)
@@ -21,10 +25,6 @@ os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
 
 running = True
 CLOCK = pg.time.Clock()
-FPS = 30
-DT = 0
-if FPS != 0:
-    DT = 1 / FPS
 BLIT_OFFSET = np.array((0, -26))
 
 AXLE_POS = np.array((957, 536))
@@ -51,12 +51,13 @@ def wndProc(oldWndProc, draw_callback, hWnd, message, wParam, lParam):
 
 
 def main(ticking=False):
-    global running, DT
+    global running
 
     sleeping = False
+    DT = 0
 
     def draw_watch(all=False, no_update=False):
-        nonlocal sleeping
+        nonlocal sleeping, DT
         if sleeping:
             dirty_rects = []
 
@@ -80,12 +81,12 @@ def main(ticking=False):
 
         for r in u.all.values():
             dirty_rects.append(r.rect.copy())
-            SCREEN.blit(BG, r.rect, r.rect)
+            r.surface.blit(BG, r.rect, r.rect)
 
         for r in u.all.values():
             r.update(DT, datetime=datetime)
             dirty_rects.append(r.rect.copy())
-            SCREEN.blit(r.image, r.rect)
+            r.surface.blit(r.image, r.rect)
 
         if no_update:
             return
@@ -114,6 +115,11 @@ def main(ticking=False):
             SCREEN.blit(overlay, (0, 0))
 
         pg.display.flip()
+
+    def toggle_slumber_enabled():
+        nonlocal slumber_enabled
+
+        settings.update({"slumber enabled": not slumber_enabled})
 
     hour = u.ClockHand(
         SCREEN, spr.HOUR_HAND, AXLE_POS + BLIT_OFFSET, "hour", 2, ticking=ticking
@@ -147,14 +153,26 @@ def main(ticking=False):
 
     u.Button(
         SCREEN,
-        spr.B_NORMAL,
-        (300, 800),
-        0,
+        **spr.BUTTON,
+        position=(300, 800),
+        priority=0,
         command=sleep,
         text="Schlafen",
-        asprite=spr.B_ACTIVE,
         atext="Wecken",
     )
+
+    b_toggle_slumber = u.Button(
+        SCREEN,
+        **spr.BUTTON,
+        position=(300, 870),
+        priority=0,
+        command=toggle_slumber_enabled,
+        text="Schlummern deaktiviert",
+        atext="Schlummern aktiviert",
+    )
+
+    if src.settings_dict["slumber enabled"]:
+        b_toggle_slumber.set_mode("active")
 
     oldWndProc = win32gui.SetWindowLong(
         pg.display.get_wm_info()["window"],
@@ -165,6 +183,11 @@ def main(ticking=False):
     timing = []
 
     while running:
+        slumbering = win32gui.GetActiveWindow() != pg.display.get_wm_info()["window"]
+        slumber_enabled = src.settings_dict["slumber enabled"]
+
+        # print(slumbering, slumber_enabled)
+
         events = pg.event.get()
 
         for ev in events:
@@ -175,7 +198,7 @@ def main(ticking=False):
                 if ev.key == pg.K_ESCAPE:
                     running = False
 
-            pos = pg.mouse.get_pos()
+            # pos = pg.mouse.get_pos()
 
             for id in u.buttons:
                 b = u.all[id]
@@ -185,7 +208,16 @@ def main(ticking=False):
 
         draw_watch()
 
-        DT = 0.001 * CLOCK.tick(FPS)
+        if slumber_enabled and slumbering:
+            DT = CLOCK.tick(src.settings_dict["slumber fps"])
+
+        elif sleeping:
+            DT = CLOCK.tick(src.settings_dict["sleep fps"])
+
+        else:
+            DT = CLOCK.tick(src.settings_dict["fps"])
+
+        DT *= 0.001
 
         timing.append(DT)
 

@@ -251,7 +251,7 @@ class Button(BaseRender):
         atext_rect = atext_surface.get_rect(center=text_pos)
 
         self.sprite.blit(text_surface, text_rect)
-        self.asprite = kwargs.get("asprite", self.sprite)
+        self.asprite = kwargs.get("asprite", self.sprite).copy()
         self.asprite.blit(atext_surface, atext_rect)
         self._rect = self.sprite.get_rect(**self._true_pos)
         self._arect = self.asprite.get_rect(**self._true_pos)

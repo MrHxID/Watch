@@ -1,5 +1,6 @@
 {
     "fps": 30,
     "slumber fps": 5,
-    "sleep fps": 30
+    "sleep fps": 30,
+    "slumber enabled": true
 }

@@ -1,6 +1,5 @@
 import pygame as pg
 from pathlib import Path
-import numpy as np
 
 try:
     path = Path(__file__)
@@ -52,3 +51,5 @@ NUMBERS: dict[str, pg.Surface] = {
 
 B_NORMAL = load_sprite(1920, 584, 300, 50)
 B_ACTIVE = load_sprite(1920, 634, 300, 50)
+
+BUTTON = {"sprite": B_NORMAL, "asprite": B_ACTIVE}

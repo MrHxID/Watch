@@ -1,14 +1,9 @@
-import os
-
-import numpy as np
 import pygame as pg
-import win32con
-import win32gui
-import win32help
 
-
+# importing sprites to load images
 from . import sprites as spr
+from . import settings
 
-__all__ = ("core", "sprites")
+settings_dict = settings.load()
 
 pg.init()
