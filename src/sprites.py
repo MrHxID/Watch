@@ -4,7 +4,7 @@ import numpy as np
 
 try:
     path = Path(__file__)
-    _sheet = pg.image.load(path.parent.parent.joinpath("assets", "Sprites 1.png"))
+    _sheet = pg.image.load(path.parent.parent.joinpath("assets", "Sprites.png"))
 except FileNotFoundError as err:
     raise FileNotFoundError(f"Could not find the sprite sheet: {''.join(err.args)}")
 
