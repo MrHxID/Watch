@@ -68,15 +68,22 @@ class ClockHand(BaseRender):
         assert type in ("hour", "minute", "second"), f"Invalid type parameter: {type}"
         self.type = type
         self.ticking = kwargs.get("ticking", False)
-        self.shadow = None
+        self.shadow: None | Shadow = None
         self.angle = 0
 
         if self.type == "hour":
             self.d_axle_center = 124
+            self.border = "#cbcbcb"
+
         elif self.type == "minute":
             self.d_axle_center = 203
+            self.border = "#cbcbcb"
+
         elif self.type == "second":
             self.d_axle_center = 43
+            self.border = "#949494"
+
+        self.alpha_threshhold = 150
 
     def update(self, dt, **kwargs):
         time = kwargs.get("datetime")
@@ -97,38 +104,31 @@ class ClockHand(BaseRender):
             # Never happens
             raise ValueError("wtf")
 
-        # self.angle = (
-        #     -self.angle
-        # )  # negative angle because pygame rotates counter-clockwise
-
         if self.shadow is not None:
             self.shadow.angle = self.angle
-            self.shadow._update(dt)
 
+        # negative angle because pygame rotates counter-clockwise
         self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
-        # self.rect = self.image.get_rect(**self._true_pos)
 
         offset_vec = pg.Vector2(0, -self.d_axle_center)
 
         rotated_offset_vec = offset_vec.rotate(self.angle)
 
-        # self.rect.topleft += np.floor(rotated_offset)
-
-        # print(rotated_offset)
-
-        self.image, offset = self._shift(self.image, rotated_offset_vec)
-
-        # print(rect, self.rect)
+        self.image, offset = self._shift(
+            self.image, rotated_offset_vec, self.border, self.alpha_threshhold
+        )
 
         self.rect = self.image.get_rect(**self._true_pos)
         self.rect.topleft += offset
 
-        # self.rect.topleft += np.array(rect.topleft)
-
-    # for more intuitive version: see src/test2.py -> shift_2
-
+    # for first version: see src/test2.py -> shift_2
     @staticmethod
-    def _shift(image: pg.Surface, offset: tuple[float, float]):
+    def _shift(
+        image: pg.Surface,
+        offset: tuple[float, float],
+        border_color: pg.Color | None = None,
+        alpha_threshhold: int = 254,
+    ):
         size = np.array(image.get_size())
         surface = pg.Surface(size + 1, pg.SRCALPHA)
         surface.blit(image, (1, 1))
@@ -139,9 +139,6 @@ class ClockHand(BaseRender):
         sub_px_offset = offset % 1
 
         off_x, off_y = sub_px_offset
-
-        pre_kernel = np.ones((3, 3)) / 9
-        # print(pre_kernel)
 
         # rotated 180 degrees upon use
         kernel = np.array(
@@ -155,6 +152,15 @@ class ClockHand(BaseRender):
         g = pg.surfarray.pixels_green(surface)
         b = pg.surfarray.pixels_blue(surface)
         a = pg.surfarray.pixels_alpha(surface)
+
+        if border_color is not None:
+            border_color = pg.Color(border_color)
+
+            indices = a <= alpha_threshhold
+
+            r[:, :] = np.where(indices, border_color.r, r)
+            g[:, :] = np.where(indices, border_color.g, g)
+            b[:, :] = np.where(indices, border_color.b, b)
 
         # because pygames surface -> array swaps columns and rows
         # true_* = array how you would intuitively think it should work
@@ -182,19 +188,19 @@ class Shadow(ClockHand):
         super().__init__(surface, sprite, position, type, priority, **kwargs)
         self.parent = parent
         self.parent.shadow = self
+        self.angle = 0
+        self.border = "#878787"
+        self.alpha_threshhold = 0
 
     def update(self, dt, **kwargs):
-        # self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
-        # self.rect = self.image.get_rect(**self._true_pos)
-        return
-
-    def _update(self, dt):
         self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
 
         offset_vec = pg.Vector2(0, -self.d_axle_center)
         rotated_offset_vec = offset_vec.rotate(self.angle)
 
-        self.image, offset = self._shift(self.image, rotated_offset_vec)
+        self.image, offset = self._shift(
+            self.image, rotated_offset_vec, self.border, self.alpha_threshhold
+        )
 
         self.rect = self.image.get_rect(**self._true_pos)
         self.rect.topleft += offset
