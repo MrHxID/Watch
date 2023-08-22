@@ -18,6 +18,8 @@ SCREEN = pg.display.set_mode((1920, 1017), pg.RESIZABLE)
 win32gui.ShowWindow(pg.display.get_wm_info()["window"], win32con.SW_MAXIMIZE)
 BG = pg.Surface(SCREEN.get_size())
 
+pg.display.set_caption("Tangente Neomatik")
+
 # pg.display.set_mode((1920, 1017))
 
 
@@ -183,12 +185,12 @@ def main(ticking=False):
     timing = []
 
     while running:
-        slumbering = win32gui.GetActiveWindow() != pg.display.get_wm_info()["window"]
         slumber_enabled = src.settings_dict["slumber enabled"]
 
-        # print(slumbering, slumber_enabled)
-
         events = pg.event.get()
+
+        if events:
+            print(events)
 
         for ev in events:
             if ev.type == pg.QUIT:
@@ -200,6 +202,9 @@ def main(ticking=False):
 
             # pos = pg.mouse.get_pos()
 
+            if ev.type == pg.ACTIVEEVENT:
+                slumbering = not bool(ev.gain)
+
             for id in u.buttons:
                 b = u.all[id]
                 if ev.type == pg.MOUSEBUTTONUP:
@@ -207,6 +212,8 @@ def main(ticking=False):
                         b.check_input(ev.pos)
 
         draw_watch()
+
+        # print(slumbering, slumber_enabled)
 
         if slumber_enabled and slumbering:
             DT = CLOCK.tick(src.settings_dict["slumber fps"])
