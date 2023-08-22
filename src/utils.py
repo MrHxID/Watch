@@ -3,8 +3,9 @@ import datetime as dt
 import numpy as np
 import pygame as pg
 
-from . import AXLE_POS, DATE_POS, SECOND_POS
 from . import sprites as spr
+
+from scipy.ndimage import convolve
 
 
 class BaseRender:
@@ -25,7 +26,7 @@ class BaseRender:
 
         self.image = self.sprite.copy()
 
-        self.offset = np.array(kwargs.get("offset", np.array((0, 0))))
+        self.offset = np.array(kwargs.get("offset", np.array((0, 0))), dtype=float)
         self.position = position + self.offset
         self.priority = priority
         self._id = next(self.GenID)
@@ -49,7 +50,7 @@ class BaseRender:
 
     GenID = _generate_id()
 
-    def update(self, dt):
+    def update(self, dt, *args, **kwargs):
         return
 
 
@@ -66,29 +67,111 @@ class ClockHand(BaseRender):
         super().__init__(surface, sprite, position, priority, **kwargs)
         assert type in ("hour", "minute", "second"), f"Invalid type parameter: {type}"
         self.type = type
+        self.ticking = kwargs.get("ticking", False)
+        self.shadow: None | Shadow = None
+        self.angle = 0
+
+        if self.type == "hour":
+            self.d_axle_center = 124
+            self.border = "#cbcbcb"
+
+        elif self.type == "minute":
+            self.d_axle_center = 203
+            self.border = "#cbcbcb"
+
+        elif self.type == "second":
+            self.d_axle_center = 43
+            self.border = "#949494"
+
+        self.alpha_threshhold = 150
 
     def update(self, dt, **kwargs):
         time = kwargs.get("datetime")
 
-        self.angle = 0
-
         if self.type == "hour":
             self.angle = 30 * time.hour + 0.5 * time.minute + 0.008333333 * time.second
         elif self.type == "minute":
-            self.angle = 6 * time.minute + 0.1 * time.second + 1e-7 * time.microsecond
+            self.angle = (
+                6 * time.minute
+                + 0.1 * time.second
+                + (0 if self.ticking else 1e-7 * time.microsecond)
+            )
         elif self.type == "second":
-            self.angle = 6 * time.second + 6e-6 * time.microsecond
+            self.angle = 6 * time.second + (
+                0 if self.ticking else 6e-6 * time.microsecond
+            )
         else:
             # Never happens
             raise ValueError("wtf")
 
-        self.angle = (
-            -self.angle
-        )  # negative angle because pygame rotates counter-clockwise
+        if self.shadow is not None:
+            self.shadow.angle = self.angle
 
-        self.image = pg.transform.rotozoom(self.sprite, self.angle, 1)
+        # negative angle because pygame rotates counter-clockwise
+        self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
+
+        offset_vec = pg.Vector2(0, -self.d_axle_center)
+
+        rotated_offset_vec = offset_vec.rotate(self.angle)
+
+        self.image, offset = self._shift(
+            self.image, rotated_offset_vec, self.border, self.alpha_threshhold
+        )
 
         self.rect = self.image.get_rect(**self._true_pos)
+        self.rect.topleft += offset
+
+    # for first version: see src/test2.py -> shift_2
+    @staticmethod
+    def _shift(
+        image: pg.Surface,
+        offset: tuple[float, float],
+        border_color: pg.Color | None = None,
+        alpha_threshhold: int = 254,
+    ):
+        size = np.array(image.get_size())
+        surface = pg.Surface(size + 1, pg.SRCALPHA)
+        surface.blit(image, (1, 1))
+
+        offset = np.array(offset, dtype=float)
+
+        px_offset = np.floor(offset)
+        sub_px_offset = offset % 1
+
+        off_x, off_y = sub_px_offset
+
+        # rotated 180 degrees upon use
+        kernel = np.array(
+            [
+                [(1 - off_x) * (1 - off_y), (1 - off_x) * off_y],
+                [off_x * (1 - off_y), off_x * off_y],
+            ]
+        )
+
+        r = pg.surfarray.pixels_red(surface)
+        g = pg.surfarray.pixels_green(surface)
+        b = pg.surfarray.pixels_blue(surface)
+        a = pg.surfarray.pixels_alpha(surface)
+
+        if border_color is not None:
+            border_color = pg.Color(border_color)
+
+            indices = a <= alpha_threshhold
+
+            r[:, :] = np.where(indices, border_color.r, r)
+            g[:, :] = np.where(indices, border_color.g, g)
+            b[:, :] = np.where(indices, border_color.b, b)
+
+        # because pygames surface -> array swaps columns and rows
+        # true_* = array how you would intuitively think it should work
+        # i.e. true_*[0] == first row of image
+
+        convolve(r, kernel, r)
+        convolve(g, kernel, g)
+        convolve(b, kernel, b)
+        convolve(a, kernel, a)
+
+        return (surface, px_offset)
 
 
 class Shadow(ClockHand):
@@ -104,10 +187,23 @@ class Shadow(ClockHand):
     ):
         super().__init__(surface, sprite, position, type, priority, **kwargs)
         self.parent = parent
+        self.parent.shadow = self
+        self.angle = 0
+        self.border = "#878787"
+        self.alpha_threshhold = 0
 
-    # def update(self, dt):
-    #     self.image = pg.transform.rotozoom(self.sprite, self.parent.angle, 1)
-    #     self.rect = self.image.get_rect(**self._true_pos)
+    def update(self, dt, **kwargs):
+        self.image = pg.transform.rotozoom(self.sprite, -self.angle, 1)
+
+        offset_vec = pg.Vector2(0, -self.d_axle_center)
+        rotated_offset_vec = offset_vec.rotate(self.angle)
+
+        self.image, offset = self._shift(
+            self.image, rotated_offset_vec, self.border, self.alpha_threshhold
+        )
+
+        self.rect = self.image.get_rect(**self._true_pos)
+        self.rect.topleft += offset
 
 
 class Date(BaseRender):
@@ -128,6 +224,75 @@ class Date(BaseRender):
         self.image = date(day)
 
 
+class Button(BaseRender):
+    def __init__(
+        self,
+        surface: pg.Surface,
+        sprite: pg.Surface | None,
+        position: tuple[int, int],
+        priority: int = 0,
+        **kwargs,
+    ):
+        super().__init__(surface, sprite, position, priority, **kwargs)
+        self.command = kwargs.get("command", lambda *_, **__: None)
+        self.cargs = kwargs.get("cargs", ())
+        self.ckwargs = kwargs.get("ckwargs", {})
+        self.enabled = kwargs.get("enabled", True)
+        self.activated = kwargs.get("activated", False)
+
+        text = kwargs.get("text", "")
+        atext = kwargs.get("atext", text)
+        font = kwargs.get("font", pg.font.SysFont("Arial", 30))
+
+        text_surface: pg.Surface = font.render(text, True, "#000000")
+        atext_surface = font.render(atext, True, "#000000")
+        text_pos = 0.5 * np.array(self.image.get_size())
+        text_rect = text_surface.get_rect(center=text_pos)
+        atext_rect = atext_surface.get_rect(center=text_pos)
+
+        self.sprite.blit(text_surface, text_rect)
+        self.asprite = kwargs.get("asprite", self.sprite).copy()
+        self.asprite.blit(atext_surface, atext_rect)
+        self._rect = self.sprite.get_rect(**self._true_pos)
+        self._arect = self.asprite.get_rect(**self._true_pos)
+
+        self.image = self.sprite.copy()
+
+        self.staged_changes = {}
+        self.modes = {
+            "normal": {"sprite": self.sprite, "rect": self._rect, "activated": False},
+            "active": {"sprite": self.asprite, "rect": self._arect, "activated": True},
+        }
+
+        if self.activated:
+            self.set_mode("active")
+
+        buttons.append(self._id)
+
+    def check_input(self, position):
+        if not self.enabled:
+            return
+
+        if self.rect.collidepoint(position):
+            self.command(*self.cargs, **self.ckwargs)
+
+            if self.activated:
+                self.set_mode("normal")
+            else:
+                self.set_mode("active")
+
+    def set_mode(self, mode: str):
+        self.staged_changes.update(self.modes[mode])
+
+    def update(self, dt, **kwargs):
+        for attr in self.staged_changes:
+            setattr(self, attr, self.staged_changes[attr])
+
+        self.image = self.sprite.copy()
+
+        return super().update(dt, **kwargs)
+
+
 def date(date: int):
     temp = list(str(date))
     if len(temp) == 1:
@@ -140,4 +305,17 @@ def date(date: int):
     return surface
 
 
+def flatten(array: list | tuple | set):
+    if not isinstance(array, (list, tuple)):
+        return [array]
+
+    flat_list = []
+
+    for i in array:
+        flat_list.extend(flatten(i))
+
+    return type(array)(flat_list)
+
+
 all: dict[int, BaseRender] = {}
+buttons: list[int] = []
