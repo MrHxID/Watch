@@ -3,7 +3,7 @@
 __pycache__/
 *.py[cod]
 src/test.py
+src/test2.py
 *.kra
 *.kra~
 *.png~
-src/test2.py

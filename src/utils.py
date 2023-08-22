@@ -304,18 +304,5 @@ def date(date: int):
 
     return surface
 
-
-def flatten(array: list | tuple | set):
-    if not isinstance(array, (list, tuple)):
-        return [array]
-
-    flat_list = []
-
-    for i in array:
-        flat_list.extend(flatten(i))
-
-    return type(array)(flat_list)
-
-
 all: dict[int, BaseRender] = {}
 buttons: list[int] = []

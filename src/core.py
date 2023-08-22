@@ -78,7 +78,6 @@ def main(ticking=False):
             return
 
         dirty_rects = []
-        dirty_rects.append([pg.Rect(0, 0, 10, 10), pg.Rect(10, 0, 20, 20)])
         datetime = dt.datetime.now()
 
         for r in u.all.values():
@@ -92,8 +91,6 @@ def main(ticking=False):
 
         if no_update:
             return
-
-        dirty_rects = u.flatten(dirty_rects)
 
         if all:
             pg.display.flip()
