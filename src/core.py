@@ -1,5 +1,4 @@
 import datetime as dt
-import os
 
 import numpy as np
 import pygame as pg
@@ -12,18 +11,12 @@ from . import sprites as spr
 from . import utils as u
 from . import settings
 
-_default_settings = settings.default()
-
-SCREEN = pg.display.set_mode((1920, 1017), pg.RESIZABLE)
+SCREEN = pg.display.set_mode((1920, 1017), pg.RESIZABLE|pg.HIDDEN)
 win32gui.ShowWindow(pg.display.get_wm_info()["window"], win32con.SW_MAXIMIZE)
 BG = pg.Surface(SCREEN.get_size())
 
 pg.display.set_caption("Tangente Neomatik")
-
-# pg.display.set_mode((1920, 1017))
-
-
-os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
+pg.display.set_allow_screensaver(True)
 
 running = True
 CLOCK = pg.time.Clock()
