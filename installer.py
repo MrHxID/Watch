@@ -2,10 +2,15 @@ import shutil
 import stat
 import tkinter as tk
 from pathlib import Path
+from threading import Thread
 from tkinter import filedialog
 
+import pyuac
 import win32com.client
 from git import Repo
+
+if not pyuac.isUserAdmin():
+    pyuac.runAsAdmin()
 
 root = tk.Tk()
 screen_w, screen_h = root.winfo_screenwidth(), root.winfo_screenheight()
@@ -83,6 +88,8 @@ class App:
         self.main_frame = tk.Frame(root, name="main")
         self.finished_frame = tk.Frame(root, name="finished")
 
+        self.root = root
+
         tk.Label(
             self.main_frame, text="Tangente Neomatik Installation", font=("Arial", 15)
         ).place(x=200, y=00, anchor="n")
@@ -137,12 +144,13 @@ class App:
         self.b_install = tk.Button(
             self.main_frame,
             text="Installieren",
-            command=lambda: root.after(1, self.install),
+            command=self._wrap_install,
         )
 
         root.update()
         root.wm_deiconify()
-        root.focus_set()
+        # root.focus_set()
+        # root.lift()
 
         self.main_frame.place(
             x=0, y=0, width=root.winfo_width(), height=root.winfo_height()
@@ -165,7 +173,39 @@ class App:
 
         self.var_installation_dir.set(dir)
 
-    def install(self):
+    def _wrap_install(self):
+        self.root.attributes("-disabled", True)
+        self.e_installation_dir.configure(state="disabled")
+        self.b_choose_installation_dir.configure(state="disabled")
+        self.b_create_desktop_shortcut.configure(state="disabled")
+        self.b_create_autostart.configure(state="disabled")
+        self.b_start_menu.configure(state="disabled")
+        self.b_cancel.configure(state="disabled")
+        self.b_install.configure(state="disabled")
+
+        flags = [False]
+
+        Thread(target=self.install, daemon=True, kwargs={"flags": flags}).start()
+
+        def _check_flags():
+            nonlocal flags
+            if flags[0]:
+                # The installation is complete
+                self.root.attributes("-disabled", False)
+                self.e_installation_dir.configure(state="normal")
+                self.b_choose_installation_dir.configure(state="normal")
+                self.b_create_desktop_shortcut.configure(state="normal")
+                self.b_create_autostart.configure(state="normal")
+                self.b_start_menu.configure(state="normal")
+                self.b_cancel.configure(state="normal")
+                self.b_install.configure(state="normal")
+            else:
+                # Check again
+                self.root.after(100, _check_flags)
+
+        _check_flags()
+
+    def install(self, *, flags):
         directory = Path(self.var_installation_dir.get())
         if directory.exists():
             for file in directory.rglob("*"):
@@ -209,6 +249,8 @@ class App:
             start_menu.mkdir(exist_ok=True)
 
             self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
+
+        flags[0] = True
 
     def _create_shortcut(self, path: Path):
         shell = win32com.client.Dispatch("WScript.Shell")
