@@ -9,3 +9,4 @@ src/test2.py
 *.kra
 *.kra~
 *.png~
+*.spec
