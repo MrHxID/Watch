@@ -1,8 +1,11 @@
+import shutil
+import stat
 import tkinter as tk
 from pathlib import Path
-import git
 from tkinter import filedialog
 
+import win32com.client
+from git import Repo
 
 root = tk.Tk()
 screen_w, screen_h = root.winfo_screenwidth(), root.winfo_screenheight()
@@ -56,9 +59,9 @@ class ToolTip:
             relief="solid",
             justify="left",
             bd=1,
-            padx=0
+            padx=0,
         )
-        self.label.pack(ipadx=1)
+        self.label.pack(side="left")
         self.label.update()
         self.height = self.label.winfo_height()
 
@@ -76,26 +79,31 @@ class ToolTip:
 
 
 class App:
-    def __init__(self, root):
-        tk.Label(root, text="Tangente Neomatik Installation", font=("Arial", 15)).place(
-            x=200, y=00, anchor="n"
-        )
-        tk.Label(root, text="Ordner").place(x=20, y=40)
+    def __init__(self, root: tk.Tk):
+        self.main_frame = tk.Frame(root, name="main")
+        self.finished_frame = tk.Frame(root, name="finished")
+
+        tk.Label(
+            self.main_frame, text="Tangente Neomatik Installation", font=("Arial", 15)
+        ).place(x=200, y=00, anchor="n")
+        tk.Label(self.main_frame, text="Ordner").place(x=20, y=40)
         self.var_installation_dir = tk.StringVar(
-            root,
+            self.main_frame,
             value=r"C:\Program Files\Tangente Neomatik",
             name="var_installation_dir",
         )
-        self.e_installation_dir = tk.Entry(root, textvariable=self.var_installation_dir)
+        self.e_installation_dir = tk.Entry(
+            self.main_frame, textvariable=self.var_installation_dir
+        )
         self.b_choose_installation_dir = tk.Button(
-            root, text="Auswählen", command=self._set_installation_dir
+            self.main_frame, text="Auswählen", command=self._set_installation_dir
         )
 
         self.var_create_desktop_shortcut = tk.BooleanVar(
-            root, value=True, name="var_create_desktop_shortcut"
+            self.main_frame, value=True, name="var_create_desktop_shortcut"
         )
         self.b_create_desktop_shortcut = tk.Checkbutton(
-            root,
+            self.main_frame,
             text="Desktopverknüpfung",
             variable=self.var_create_desktop_shortcut,
         )
@@ -104,29 +112,49 @@ class App:
             "Erstellt eine Verknüpfung auf dem Startbildschirm.",
         )
 
-        self.var_autostart = tk.BooleanVar(root, value=True, name="var_autostart")
+        self.var_autostart = tk.BooleanVar(
+            self.main_frame, value=True, name="var_autostart"
+        )
         self.b_create_autostart = tk.Checkbutton(
-            root, text="Autostart", variable=self.var_autostart
+            self.main_frame, text="Autostart", variable=self.var_autostart
         )
         self.t_create_autostart = ToolTip(
             self.b_create_autostart,
             "Startet das Programm sobald der PC hochgefahren ist.",
         )
 
-        self.var_start_menu = tk.BooleanVar(root, value=True, name="var_start_menu")
+        self.var_start_menu = tk.BooleanVar(
+            self.main_frame, value=True, name="var_start_menu"
+        )
         self.b_start_menu = tk.Checkbutton(
-            root, text="Start Menü", variable=self.var_start_menu
+            self.main_frame, text="Start Menü", variable=self.var_start_menu
+        )
+        self.t_start_menu = ToolTip(
+            self.b_start_menu, text="Zeigt das Programm im Windows Start Menü an."
         )
 
+        self.b_cancel = tk.Button(self.main_frame, text="Abbrechen", command=root.quit)
+        self.b_install = tk.Button(
+            self.main_frame,
+            text="Installieren",
+            command=lambda: root.after(1, self.install),
+        )
+
+        root.update()
+        root.wm_deiconify()
+        root.focus_set()
+
+        self.main_frame.place(
+            x=0, y=0, width=root.winfo_width(), height=root.winfo_height()
+        )
         self.e_installation_dir.place(x=25, y=70, width=281)
         self.b_choose_installation_dir.place(x=306, y=67.5)
         self.b_create_desktop_shortcut.place(x=20, y=100)
         self.b_create_autostart.place(x=20, y=130)
         self.b_start_menu.place(x=20, y=160)
 
-        tk.Button(root, text="Abbrechen", command=root.quit).place(
-            x=30, y=460, width=160
-        )
+        self.b_cancel.place(x=30, y=460, width=160)
+        self.b_install.place(x=210, y=460, width=160)
 
     def _set_installation_dir(self):
         dir = filedialog.askdirectory(
@@ -137,7 +165,61 @@ class App:
 
         self.var_installation_dir.set(dir)
 
+    def install(self):
+        directory = Path(self.var_installation_dir.get())
+        if directory.exists():
+            for file in directory.rglob("*"):
+                file.chmod(stat.S_IRWXU)
+
+            shutil.rmtree(directory)
+
+        Repo.clone_from(
+            r"https://github.com/MrHxID/Watch",
+            directory,
+        )
+
+        if self.var_create_desktop_shortcut.get():
+            self._create_shortcut(
+                Path.home().joinpath("Desktop", "Tangente Neomatik.lnk")
+            )
+
+        if self.var_autostart.get():
+            self._create_shortcut(
+                Path.home().joinpath(
+                    "AppData",
+                    "Roaming",
+                    "Microsoft",
+                    "Windows",
+                    "Start Menu",
+                    "Programs",
+                    "Startup",
+                    "Tangente Neomatik.lnk",
+                )
+            )
+
+        if self.var_start_menu.get():
+            start_menu = Path.home().joinpath(
+                "AppData",
+                "Roaming",
+                "Microsoft",
+                "Windows",
+                "Start Menu",
+                "Programs",
+            )
+            start_menu.mkdir(exist_ok=True)
+
+            self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
+
+    def _create_shortcut(self, path: Path):
+        shell = win32com.client.Dispatch("WScript.Shell")
+        shortcut = shell.CreateShortCut(str(path))
+        shortcut.targetpath = str(
+            Path(self.var_installation_dir.get()).joinpath("Tangente Neomatik.exe")
+        )
+        shortcut.save()
+
 
 app = App(root)
+
 
 root.mainloop()
