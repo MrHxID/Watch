@@ -148,9 +148,6 @@ class App:
         )
 
         root.update()
-        root.wm_deiconify()
-        # root.focus_set()
-        # root.lift()
 
         self.main_frame.place(
             x=0, y=0, width=root.winfo_width(), height=root.winfo_height()
@@ -163,6 +160,20 @@ class App:
 
         self.b_cancel.place(x=30, y=460, width=160)
         self.b_install.place(x=210, y=460, width=160)
+
+        # finished Frame
+
+        tk.Label(
+            self.finished_frame, text="Installation abgeschlossen", font=("Arial", 15)
+        ).place(x=200, y=20, anchor="n")
+
+        tk.Button(self.finished_frame, text="Schließen", command=self.root.quit).place(
+            x=210, y=460, width=160
+        )
+
+        root.wm_deiconify()
+        # root.focus_set()
+        # root.lift()
 
     def _set_installation_dir(self):
         dir = filedialog.askdirectory(
@@ -192,13 +203,13 @@ class App:
             if flags[0]:
                 # The installation is complete
                 self.root.attributes("-disabled", False)
-                self.e_installation_dir.configure(state="normal")
-                self.b_choose_installation_dir.configure(state="normal")
-                self.b_create_desktop_shortcut.configure(state="normal")
-                self.b_create_autostart.configure(state="normal")
-                self.b_start_menu.configure(state="normal")
-                self.b_cancel.configure(state="normal")
-                self.b_install.configure(state="normal")
+                self.main_frame.place_forget()
+                self.finished_frame.place(
+                    x=0,
+                    y=0,
+                    width=self.root.winfo_width(),
+                    height=self.root.winfo_height(),
+                )
             else:
                 # Check again
                 self.root.after(100, _check_flags)
