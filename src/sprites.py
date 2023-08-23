@@ -2,8 +2,8 @@ import pygame as pg
 from pathlib import Path
 
 try:
-    path = Path(__file__)
-    _sheet = pg.image.load(path.parent.parent.joinpath("assets", "Sprites.png"))
+    path = Path.cwd().joinpath("assets", "Sprites.png")
+    _sheet = pg.image.load(path)
 except FileNotFoundError as err:
     raise FileNotFoundError(f"Could not find the sprite sheet: {''.join(err.args)}")
 

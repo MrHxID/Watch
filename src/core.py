@@ -34,11 +34,7 @@ pg.display.flip()
 def wndProc(oldWndProc, draw_callback, hWnd, message, wParam, lParam):
     # print(message)
 
-    if (
-        message == win32con.WM_SIZE
-        or message == win32con.WM_MOVE
-        or message == win32con.WM_WINDOWPOSCHANGING
-    ):
+    if message == win32con.WM_SIZE or message == win32con.WM_MOVE:
         SCREEN.blit(BG, (0, 0))
         draw_callback(True)
         win32gui.RedrawWindow(
@@ -184,8 +180,8 @@ def main(ticking: bool = False, *, debug: bool = False):
         slumber_enabled = src.settings_dict["slumber enabled"]
 
         events = pg.event.get()
-        if events:
-            print(events)
+        # if events:
+        #     print(events)
 
         for ev in events:
             if ev.type == pg.QUIT:
