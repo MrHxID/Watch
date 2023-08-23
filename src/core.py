@@ -1,5 +1,4 @@
 import datetime as dt
-import os
 
 import numpy as np
 import pygame as pg
@@ -12,18 +11,13 @@ from . import sprites as spr
 from . import utils as u
 from . import settings
 
-_default_settings = settings.default()
-
-SCREEN = pg.display.set_mode((1920, 1017), pg.RESIZABLE)
+SCREEN = pg.display.set_mode((1920, 1017), pg.RESIZABLE | pg.HIDDEN)
 win32gui.ShowWindow(pg.display.get_wm_info()["window"], win32con.SW_MAXIMIZE)
 BG = pg.Surface(SCREEN.get_size())
 
 pg.display.set_caption("Tangente Neomatik")
-
-# pg.display.set_mode((1920, 1017))
-
-
-os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
+pg.display.set_icon(spr.ICON)
+pg.display.set_allow_screensaver(True)
 
 running = True
 CLOCK = pg.time.Clock()
@@ -39,6 +33,8 @@ pg.display.flip()
 
 
 def wndProc(oldWndProc, draw_callback, hWnd, message, wParam, lParam):
+    # print(message)
+
     if message == win32con.WM_SIZE or message == win32con.WM_MOVE:
         SCREEN.blit(BG, (0, 0))
         draw_callback(True)
@@ -52,7 +48,7 @@ def wndProc(oldWndProc, draw_callback, hWnd, message, wParam, lParam):
     return win32gui.CallWindowProc(oldWndProc, hWnd, message, wParam, lParam)
 
 
-def main(ticking=False):
+def main(ticking: bool = False, *, debug: bool = False):
     global running
 
     sleeping = False
@@ -78,7 +74,6 @@ def main(ticking=False):
             return
 
         dirty_rects = []
-        dirty_rects.append([pg.Rect(0, 0, 10, 10), pg.Rect(10, 0, 20, 20)])
         datetime = dt.datetime.now()
 
         for r in u.all.values():
@@ -92,8 +87,6 @@ def main(ticking=False):
 
         if no_update:
             return
-
-        dirty_rects = u.flatten(dirty_rects)
 
         if all:
             pg.display.flip()
@@ -188,6 +181,8 @@ def main(ticking=False):
         slumber_enabled = src.settings_dict["slumber enabled"]
 
         events = pg.event.get()
+        # if events:
+        #     print(events)
 
         if events:
             print(events)
@@ -196,14 +191,16 @@ def main(ticking=False):
             if ev.type == pg.QUIT:
                 running = False
 
-            if ev.type == pg.KEYDOWN:
+            if ev.type == pg.KEYDOWN and debug:
                 if ev.key == pg.K_ESCAPE:
                     running = False
 
             # pos = pg.mouse.get_pos()
 
-            if ev.type == pg.ACTIVEEVENT:
-                slumbering = not bool(ev.gain)
+            if ev.type == pg.WINDOWFOCUSGAINED:
+                slumbering = False
+            if ev.type == pg.WINDOWFOCUSLOST:
+                slumbering = True
 
             for id in u.buttons:
                 b = u.all[id]

@@ -5,7 +5,9 @@ build/
 dist/
 *.py[cod]
 src/test.py
+src/test2.py
 *.kra
 *.kra~
+*.xcf
 *.png~
-src/test2.py
+*.spec
