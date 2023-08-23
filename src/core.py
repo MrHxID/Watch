@@ -16,6 +16,7 @@ win32gui.ShowWindow(pg.display.get_wm_info()["window"], win32con.SW_MAXIMIZE)
 BG = pg.Surface(SCREEN.get_size())
 
 pg.display.set_caption("Tangente Neomatik")
+pg.display.set_icon(spr.ICON)
 pg.display.set_allow_screensaver(True)
 
 running = True
