@@ -175,13 +175,14 @@ def main(ticking: bool = False, *, debug: bool = False):
         lambda *args: wndProc(oldWndProc, draw_watch, *args),
     )
 
-    timing = []
+    # if debug:
+    #     timing = []
 
     while running:
         slumber_enabled = src.settings_dict["slumber enabled"]
 
         events = pg.event.get()
-        # if events:
+        # if events and debug:
         #     print(events)
 
         for ev in events:
@@ -220,10 +221,12 @@ def main(ticking: bool = False, *, debug: bool = False):
 
         DT *= 0.001
 
-        timing.append(DT)
+        # if debug:
+        #     timing.append(DT)
 
-    mean_dt = np.mean(timing)
-    mean_fps = 1 / mean_dt
-    print(mean_fps)
+    # if debug:
+    #     mean_dt = np.mean(timing)
+    #     mean_fps = 1 / mean_dt
+    #     print(mean_fps)
 
     pg.quit()
