@@ -1,36 +1,23 @@
+import tkinter as tk
+import logging
 import shutil
 import stat
-import tkinter as tk
+import subprocess
+import sys
 from pathlib import Path
 from threading import Thread
 from tkinter import filedialog
 
 import pyuac
 import win32com.client
-from git import Repo
 
-if not pyuac.isUserAdmin():
-    pyuac.runAsAdmin()
-
-root = tk.Tk()
-screen_w, screen_h = root.winfo_screenwidth(), root.winfo_screenheight()
-w, h = 400, 500
-root.after(
-    1,
-    lambda: root.wm_iconbitmap(Path.cwd().joinpath("assets", "icon.ico")),
-)
-root.wm_title("Tangente Installer")
-root.wm_geometry(f"{w}x{h}+{(screen_w - w) // 2}+{(screen_h - h) // 2}")
-root.wm_resizable(False, False)
-
-
-def _set_instalation_dir():
-    variable = tk.StringVar(root, name="var_installation_dir")
-    print(variable.get())
+log = logging.getLogger("pyuac")
+log.setLevel(logging.DEBUG)
+log.addHandler(logging.StreamHandler(sys.stdout))
 
 
 class ToolTip:
-    def __init__(self, widget: tk.Widget, text, **kwargs):
+    def __init__(self, widget, text, **kwargs):
         self.widget = widget
         self.text = text
         self.tipwindow = None
@@ -84,11 +71,23 @@ class ToolTip:
 
 
 class App:
-    def __init__(self, root: tk.Tk):
-        self.main_frame = tk.Frame(root, name="main")
-        self.finished_frame = tk.Frame(root, name="finished")
+    def __init__(self):
+        self.root = tk.Tk()
+        screen_w, screen_h = (
+            self.root.winfo_screenwidth(),
+            self.root.winfo_screenheight(),
+        )
+        w, h = 400, 500
+        self.root.after(
+            1,
+            lambda: self.root.wm_iconbitmap(Path.cwd().joinpath("assets", "icon.ico")),
+        )
+        self.root.wm_title("Tangente Installer")
+        self.root.wm_geometry(f"{w}x{h}+{(screen_w - w) // 2}+{(screen_h - h) // 2}")
+        self.root.wm_resizable(False, False)
 
-        self.root = root
+        self.main_frame = tk.Frame(self.root, name="main")
+        self.finished_frame = tk.Frame(self.root, name="finished")
 
         tk.Label(
             self.main_frame, text="Tangente Neomatik Installation", font=("Arial", 15)
@@ -140,17 +139,19 @@ class App:
             self.b_start_menu, text="Zeigt das Programm im Windows Start Menü an."
         )
 
-        self.b_cancel = tk.Button(self.main_frame, text="Abbrechen", command=root.quit)
+        self.b_cancel = tk.Button(
+            self.main_frame, text="Abbrechen", command=self.root.quit
+        )
         self.b_install = tk.Button(
             self.main_frame,
             text="Installieren",
             command=self._wrap_install,
         )
 
-        root.update()
+        self.root.update()
 
         self.main_frame.place(
-            x=0, y=0, width=root.winfo_width(), height=root.winfo_height()
+            x=0, y=0, width=self.root.winfo_width(), height=self.root.winfo_height()
         )
         self.e_installation_dir.place(x=25, y=70, width=281)
         self.b_choose_installation_dir.place(x=306, y=67.5)
@@ -171,7 +172,7 @@ class App:
             x=210, y=460, width=160
         )
 
-        root.wm_deiconify()
+        self.root.wm_deiconify()
         # root.focus_set()
         # root.lift()
 
@@ -220,14 +221,25 @@ class App:
         directory = Path(self.var_installation_dir.get())
         if directory.exists():
             for file in directory.rglob("*"):
+                print(file)
                 file.chmod(stat.S_IRWXU)
 
+            directory.chmod(stat.S_IRWXU)
             shutil.rmtree(directory)
 
-        Repo.clone_from(
-            r"https://github.com/MrHxID/Watch",
-            directory,
+        directory.mkdir()
+
+        out = subprocess.run(
+            ["wget", r"https://github.com/MrHxID/Watch"],
+            capture_output=True,
+            shell=True,
         )
+        print(out)
+
+        for file in (directory / ".git").rglob("*"):
+            file.chmod(stat.S_IRWXU)
+
+        shutil.rmtree(directory / ".git")
 
         if self.var_create_desktop_shortcut.get():
             self._create_shortcut(
@@ -272,7 +284,9 @@ class App:
         shortcut.save()
 
 
-app = App(root)
+if not pyuac.isUserAdmin():
+    pyuac.runAsAdmin()
 
-
-root.mainloop()
+else:
+    app = App()
+    app.root.mainloop()
