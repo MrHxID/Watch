@@ -1,3 +1,4 @@
+import time
 import tkinter as tk
 import logging
 import shutil
@@ -10,10 +11,17 @@ from tkinter import filedialog
 
 import pyuac
 import win32com.client
+import enum
 
 log = logging.getLogger("pyuac")
 log.setLevel(logging.DEBUG)
 log.addHandler(logging.StreamHandler(sys.stdout))
+
+
+class InstallFlags(enum.IntFlag):
+    inprogress = 0b0000
+    finished = 0b0001
+    failed = 0b0010
 
 
 class ToolTip:
@@ -195,13 +203,29 @@ class App:
         self.b_cancel.configure(state="disabled")
         self.b_install.configure(state="disabled")
 
-        flags = [False]
+        flags = [InstallFlags.inprogress]
 
-        Thread(target=self.install, daemon=True, kwargs={"flags": flags}).start()
+        def try_install(flags):
+            try:
+                self.install()
+            except Exception as e:
+                print(e)
+                flags[0] |= InstallFlags.failed
+            finally:
+                flags[0] |= InstallFlags.finished
+
+        Thread(target=try_install, daemon=True, kwargs={"flags": flags}).start()
 
         def _check_flags():
             nonlocal flags
-            if flags[0]:
+
+            if flags[0] & InstallFlags.failed:
+                # The installation failed
+                print("failed")
+                self.root.attributes("-disabled", False)
+            elif (
+                flags[0] & InstallFlags.finished and not flags[0] & InstallFlags.failed
+            ):
                 # The installation is complete
                 self.root.attributes("-disabled", False)
                 self.main_frame.place_forget()
@@ -217,7 +241,7 @@ class App:
 
         _check_flags()
 
-    def install(self, *, flags):
+    def install(self):
         directory = Path(self.var_installation_dir.get())
         if directory.exists():
             for file in directory.rglob("*"):
@@ -229,17 +253,35 @@ class App:
 
         directory.mkdir()
 
-        out = subprocess.run(
-            ["wget", r"https://github.com/MrHxID/Watch"],
-            capture_output=True,
-            shell=True,
+        subprocess.run(
+            [
+                "powershell",
+                "-Command",
+                "wget",
+                "-UseBasicParsing",
+                "-Uri",
+                '"https://github.com/MrHxID/Watch/archive/refs/heads/main.zip"',
+                "-OutFile",
+                f'"{directory / "downloaded.zip"}"',
+            ]
         )
-        print(out)
 
-        for file in (directory / ".git").rglob("*"):
-            file.chmod(stat.S_IRWXU)
+        subprocess.run(
+            [
+                "powershell",
+                "-Command",
+                "cd",
+                f'"{directory}";&',
+                "Expand-Archive",
+                "downloaded.zip",
+            ]
+        )
 
-        shutil.rmtree(directory / ".git")
+        # ! deprecated no longer needed
+        # // for file in (directory / ".git").rglob("*"):
+        # //     file.chmod(stat.S_IRWXU)
+
+        # // shutil.rmtree(directory / ".git")
 
         if self.var_create_desktop_shortcut.get():
             self._create_shortcut(
@@ -272,8 +314,6 @@ class App:
             start_menu.mkdir(exist_ok=True)
 
             self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
-
-        flags[0] = True
 
     def _create_shortcut(self, path: Path):
         shell = win32com.client.Dispatch("WScript.Shell")
