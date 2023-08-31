@@ -235,12 +235,16 @@ class App:
 
         # failed frame
         tk.Label(
-            self.failed_frame, text="Installation fehlgeschlagen", font=("Arial", 15)
+            self.failed_frame,
+            text="Installation fehlgeschlagen",
+            font=("Arial", 15),
         ).place(x=200, y=20, anchor="n")
         tk.Label(
             self.failed_frame,
-            text='Mehr Informationen: Öffnen Sie die Datei "Tangente Neomatik.log". Reichen Sie den Inhalt'
+            text='Mehr Informationen: Öffnen Sie die Datei "Tangente Neomatik.log". Melden Sie den Inhalt '
             "der Datei als Problem unter",
+            wraplength=self.root.winfo_width() - 20,
+            justify="left",
         ).place(x=10, y=60)
         self.e_github_link = tk.Label(
             self.failed_frame,
@@ -251,13 +255,22 @@ class App:
             "<Button-1>",
             lambda _: webbrowser.open_new_tab("https://github.com/MrHxID/Watch/issues"),
         )
-        # subprocess.run("start /max firefox https://www.python.org", shell=True)
+
         tk.Label(
             self.failed_frame,
-            text="ein zusammen mit einer Beschreibung, was Sie versucht haben.",
-        ).place(x=10, y=100)
+            text="zusammen mit einer Beschreibung, was Sie versucht haben.",
+            wraplength=self.root.winfo_width() - 20,
+            justify="left",
+        ).place(x=10, y=130)
 
-        self.e_github_link.place(x=10, y=80)
+        tk.Button(self.failed_frame, text="Abbrechen", command=self.root.quit).place(
+            x=30, y=460, width=160
+        )
+        tk.Button(self.failed_frame, text="Wiederholen", command=self._retry).place(
+            x=210, y=460, width=160
+        )
+
+        self.e_github_link.place(x=10, y=100)
 
         self.root.wm_deiconify()
         # root.focus_set()
@@ -351,6 +364,24 @@ class App:
                 self.root.after(100, _check_flags)
 
         _check_flags()
+
+    def _retry(self):
+        self.e_installation_dir.configure(state="normal")
+        self.b_choose_installation_dir.configure(state="normal")
+        self.b_create_desktop_shortcut.configure(state="normal")
+        self.b_create_autostart.configure(state="normal")
+        self.b_start_menu.configure(state="normal")
+        self.b_cancel.configure(state="normal")
+        self.b_install.configure(state="normal")
+
+        self.failed_frame.place_forget()
+
+        self.main_frame.place(
+            x=0,
+            y=0,
+            width=self.root.winfo_width(),
+            height=self.root.winfo_height(),
+        )
 
     def install(self):
         # ! Remove for download. The inevitable RuntimeError is for developing
