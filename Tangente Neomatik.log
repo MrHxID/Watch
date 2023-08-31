@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "c:\Users\Leopold\My Programs\Watch\installer.py", line 215, in try_install
+    self.install()
+  File "c:\Users\Leopold\My Programs\Watch\installer.py", line 291, in install
+    raise RuntimeError
+RuntimeError
+
+Traceback (most recent call last):
+  File "c:\Users\Leopold\My Programs\Watch\installer.py", line 215, in try_install
+    self.install()
+  File "c:\Users\Leopold\My Programs\Watch\installer.py", line 291, in install
+    raise RuntimeError
+RuntimeError
+

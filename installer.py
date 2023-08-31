@@ -1,4 +1,4 @@
-import time
+import traceback
 import tkinter as tk
 import logging
 import shutil
@@ -13,9 +13,14 @@ import pyuac
 import win32com.client
 import enum
 
-log = logging.getLogger("pyuac")
+log_pyuac = logging.getLogger("pyuac")
+log_pyuac.setLevel(logging.DEBUG)
+log_pyuac.addHandler(logging.StreamHandler(sys.stdout))
+
+
+log = logging.getLogger("tangente neomatik")
 log.setLevel(logging.DEBUG)
-log.addHandler(logging.StreamHandler(sys.stdout))
+log.addHandler(logging.StreamHandler(open("Tangente Neomatik.log", "a")))
 
 
 class InstallFlags(enum.IntFlag):
@@ -208,8 +213,8 @@ class App:
         def try_install(flags):
             try:
                 self.install()
-            except Exception as e:
-                print(e)
+            except:
+                log.info(traceback.format_exc())
                 flags[0] |= InstallFlags.failed
             finally:
                 flags[0] |= InstallFlags.finished
