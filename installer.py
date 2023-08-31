@@ -385,10 +385,6 @@ class App:
         )
 
     def install(self):
-        # ! Remove for download. The inevitable RuntimeError is for developing
-        # ! self.failed_frame
-        # TODO Remove "raise RuntimeError"
-        raise RuntimeError
         directory = Path(self.var_installation_dir.get())
         if directory.exists():
             for file in directory.rglob("*"):
