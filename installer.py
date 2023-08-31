@@ -301,9 +301,10 @@ class App:
             try:
                 self.install()
             except:
-                log.addHandler(
-                    logging.StreamHandler(open("Tangente Neomatik.log", "a"))
-                )
+                if not log.handlers:
+                    log.addHandler(
+                        logging.StreamHandler(open("Tangente Neomatik.log", "a"))
+                    )
 
                 log.debug(traceback.format_exc())
                 log.debug(
