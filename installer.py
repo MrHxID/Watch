@@ -219,6 +219,17 @@ class App:
             finally:
                 flags[0] |= InstallFlags.finished
 
+                # Clean up temporary files
+                directory = Path(self.var_installation_dir.get())
+                (directory / "downloaded.zip").unlink()
+
+                temp_dir = directory / "downloaded"
+
+                for file in temp_dir.rglob("*"):
+                    file.chmod(stat.S_IRWXU)
+                
+                shutil.rmtree(temp_dir)
+
         Thread(target=try_install, daemon=True, kwargs={"flags": flags}).start()
 
         def _check_flags():
@@ -250,13 +261,13 @@ class App:
         directory = Path(self.var_installation_dir.get())
         if directory.exists():
             for file in directory.rglob("*"):
-                print(file)
+                # print(file)
                 file.chmod(stat.S_IRWXU)
 
             directory.chmod(stat.S_IRWXU)
             shutil.rmtree(directory)
 
-        directory.mkdir()
+        directory.mkdir(exist_ok=True)
 
         subprocess.run(
             [
@@ -279,10 +290,24 @@ class App:
                 f'"{directory}";&',
                 "Expand-Archive",
                 "downloaded.zip",
+                "-Force",
             ]
         )
 
-        # ! deprecated no longer needed
+        repo = next((directory / "downloaded").glob("*"))
+
+        # * Hardcoded version
+        # ! deprecated
+        # for file in (temp_dir / "downloaded" / "Watch-main").glob("*"):
+        # * when unpacking there is only one subdirectory "Watch-main". However since the
+        # * name of this directory might change it's better to use the first subdirectory
+        # * instead
+
+        for file in repo.glob("*"):
+            # ///     print(file)
+            shutil.move(file, directory)
+
+        # ! deprecated no longer includes ".git" folder
         # // for file in (directory / ".git").rglob("*"):
         # //     file.chmod(stat.S_IRWXU)
 
