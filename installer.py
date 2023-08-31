@@ -15,6 +15,7 @@ from threading import Thread
 from tkinter import filedialog
 from winreg import HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, OpenKey, QueryValueEx
 
+import pythoncom
 import pyuac
 import win32com.client
 
@@ -125,7 +126,9 @@ class ToolTip:
 
 
 class App:
-    def __init__(self):
+    def __init__(self, **kwargs):
+        self.home_path = Path(kwargs.get("home_path", Path.home()))
+
         self.root = tk.Tk()
         screen_w, screen_h = (
             self.root.winfo_screenwidth(),
@@ -442,12 +445,12 @@ class App:
 
         if self.var_create_desktop_shortcut.get():
             self._create_shortcut(
-                Path.home().joinpath("Desktop", "Tangente Neomatik.lnk")
+                self.home_path.joinpath("Desktop", "Tangente Neomatik.lnk")
             )
 
         if self.var_autostart.get():
             self._create_shortcut(
-                Path.home().joinpath(
+                self.home_path.joinpath(
                     "AppData",
                     "Roaming",
                     "Microsoft",
@@ -460,7 +463,7 @@ class App:
             )
 
         if self.var_start_menu.get():
-            start_menu = Path.home().joinpath(
+            start_menu = self.home_path.joinpath(
                 "AppData",
                 "Roaming",
                 "Microsoft",
@@ -473,7 +476,7 @@ class App:
             self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
 
     def _create_shortcut(self, path: Path):
-        shell = win32com.client.Dispatch("WScript.Shell")
+        shell = win32com.client.Dispatch("WScript.Shell", pythoncom.CoInitialize())
         shortcut = shell.CreateShortCut(str(path))
         shortcut.targetpath = str(
             Path(self.var_installation_dir.get()).joinpath("Tangente Neomatik.exe")
@@ -483,7 +486,9 @@ class App:
 
 if not pyuac.isUserAdmin():
     pyuac.runAsAdmin(
-        cmdLine=[sys.executable] + sys.argv + ["--browser", get_default_browser()]
+        cmdLine=[sys.executable]
+        + sys.argv
+        + ["--browser", get_default_browser(), "--home-path", Path.home()]
     )
 
 else:
@@ -492,5 +497,11 @@ else:
             Path(sys.argv[sys.argv.index("--browser") + 1]).parent
         )
 
-    app = App()
+    if "--home-path" in sys.argv:
+        home_path = sys.argv[sys.argv.index("--home-path") + 1]
+
+    else:
+        home_path = Path.home()
+
+    app = App(home_path=home_path)
     app.root.mainloop()
