@@ -1,19 +1,64 @@
-import tkinter as tk
+# import base64
+import enum
 import logging
+import os
+import re
 import shutil
 import stat
 import subprocess
 import sys
+import tkinter as tk
+import traceback
+import webbrowser
 from pathlib import Path
 from threading import Thread
 from tkinter import filedialog
+from winreg import HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, OpenKey, QueryValueEx
 
+import pythoncom
 import pyuac
 import win32com.client
 
-log = logging.getLogger("pyuac")
+log_pyuac = logging.getLogger("pyuac")
+log_pyuac.setLevel(logging.DEBUG)
+log_pyuac.addHandler(logging.StreamHandler(sys.stdout))
+
+
+log = logging.getLogger("tangente neomatik")
 log.setLevel(logging.DEBUG)
-log.addHandler(logging.StreamHandler(sys.stdout))
+
+
+os.environ["PATH"] += ";C:\Program Files (x86)\Microsoft\Edge\Application"
+
+# print(os.getlogin())
+
+
+def get_default_browser():
+    def get_browser_name() -> str:
+        register_path = r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice"
+        with OpenKey(HKEY_CURRENT_USER, register_path) as key:
+            return str(QueryValueEx(key, "ProgId")[0])
+
+    def format_cmd(s: str) -> str:
+        exe_path = re.sub(r"(^.+exe)(.*)", r"\1", s)
+        return exe_path.replace('"', "")
+
+    def get_exe_path(name: str) -> str:
+        register_path = r"{}\shell\open\command".format(name)
+        fullpath = ""
+        with OpenKey(HKEY_CLASSES_ROOT, register_path) as key:
+            cmd = str(QueryValueEx(key, "")[0])
+            fullpath = format_cmd(cmd)
+        return fullpath
+
+    prog_name = get_browser_name()
+    return get_exe_path(prog_name)
+
+
+class InstallFlags(enum.IntFlag):
+    inprogress = 0b0000
+    finished = 0b0001
+    failed = 0b0010
 
 
 class ToolTip:
@@ -71,28 +116,37 @@ class ToolTip:
 
 
 class App:
-    def __init__(self):
+    def __init__(self, **kwargs):
+        self.home_path = Path(kwargs.get("home_path", Path.home()))
+
         self.root = tk.Tk()
         screen_w, screen_h = (
             self.root.winfo_screenwidth(),
             self.root.winfo_screenheight(),
         )
         w, h = 400, 500
+        try:
+            # make use of pyinstallers --add-data assets\icon.ico
+            base_path = Path(sys._MEIPASS)
+        except:
+            base_path = Path.cwd()
+
         self.root.after(
-            1,
-            lambda: self.root.wm_iconbitmap(Path.cwd().joinpath("assets", "icon.ico")),
+            1, lambda: self.root.wm_iconbitmap(base_path / "assets" / "icon.ico")
         )
+
         self.root.wm_title("Tangente Installer")
         self.root.wm_geometry(f"{w}x{h}+{(screen_w - w) // 2}+{(screen_h - h) // 2}")
         self.root.wm_resizable(False, False)
 
         self.main_frame = tk.Frame(self.root, name="main")
         self.finished_frame = tk.Frame(self.root, name="finished")
+        self.failed_frame = tk.Frame(self.root, name="failed")
 
         tk.Label(
             self.main_frame, text="Tangente Neomatik Installation", font=("Arial", 15)
-        ).place(x=200, y=00, anchor="n")
-        tk.Label(self.main_frame, text="Ordner").place(x=20, y=40)
+        ).place(x=200, y=20, anchor="n")
+        tk.Label(self.main_frame, text="Ordner").place(x=20, y=60)
         self.var_installation_dir = tk.StringVar(
             self.main_frame,
             value=r"C:\Program Files\Tangente Neomatik",
@@ -153,11 +207,11 @@ class App:
         self.main_frame.place(
             x=0, y=0, width=self.root.winfo_width(), height=self.root.winfo_height()
         )
-        self.e_installation_dir.place(x=25, y=70, width=281)
-        self.b_choose_installation_dir.place(x=306, y=67.5)
-        self.b_create_desktop_shortcut.place(x=20, y=100)
-        self.b_create_autostart.place(x=20, y=130)
-        self.b_start_menu.place(x=20, y=160)
+        self.e_installation_dir.place(x=25, y=90, width=281)
+        self.b_choose_installation_dir.place(x=306, y=87.5)
+        self.b_create_desktop_shortcut.place(x=20, y=120)
+        self.b_create_autostart.place(x=20, y=150)
+        self.b_start_menu.place(x=20, y=180)
 
         self.b_cancel.place(x=30, y=460, width=160)
         self.b_install.place(x=210, y=460, width=160)
@@ -171,6 +225,45 @@ class App:
         tk.Button(self.finished_frame, text="Schließen", command=self.root.quit).place(
             x=210, y=460, width=160
         )
+
+        # failed frame
+        tk.Label(
+            self.failed_frame,
+            text="Installation fehlgeschlagen",
+            font=("Arial", 15),
+        ).place(x=200, y=20, anchor="n")
+        tk.Label(
+            self.failed_frame,
+            text='Mehr Informationen: Öffnen Sie die Datei "Tangente Neomatik.log". Melden Sie den Inhalt '
+            "der Datei als Problem unter",
+            wraplength=self.root.winfo_width() - 20,
+            justify="left",
+        ).place(x=10, y=60)
+        self.e_github_link = tk.Label(
+            self.failed_frame,
+            text="https://github.com/MrHxID/Watch/issues",
+            fg="#0000ff",
+        )
+        self.e_github_link.bind(
+            "<Button-1>",
+            lambda _: webbrowser.open_new_tab("https://github.com/MrHxID/Watch/issues"),
+        )
+
+        tk.Label(
+            self.failed_frame,
+            text="zusammen mit einer Beschreibung, was Sie versucht haben.",
+            wraplength=self.root.winfo_width() - 20,
+            justify="left",
+        ).place(x=10, y=130)
+
+        tk.Button(self.failed_frame, text="Abbrechen", command=self.root.quit).place(
+            x=30, y=460, width=160
+        )
+        tk.Button(self.failed_frame, text="Wiederholen", command=self._retry).place(
+            x=210, y=460, width=160
+        )
+
+        self.e_github_link.place(x=10, y=100)
 
         self.root.wm_deiconify()
         # root.focus_set()
@@ -195,13 +288,62 @@ class App:
         self.b_cancel.configure(state="disabled")
         self.b_install.configure(state="disabled")
 
-        flags = [False]
+        flags = [InstallFlags.inprogress]
 
-        Thread(target=self.install, daemon=True, kwargs={"flags": flags}).start()
+        def try_install(flags):
+            try:
+                self.install()
+            except:
+                if not log.handlers:
+                    log.addHandler(
+                        logging.StreamHandler(open("Tangente Neomatik.log", "a"))
+                    )
+
+                log.debug(traceback.format_exc())
+                log.debug(
+                    "Installation directory:\n"
+                    f"{self.var_installation_dir.get()}\n\n"
+                    "Options:\n"
+                    f"  -desktop: {self.var_create_desktop_shortcut.get()}\n"
+                    f"  -auto start: {self.var_autostart.get()}\n"
+                    f"  -start menu: {self.var_start_menu.get()}\n"
+                    f"==================================================\n"
+                )
+
+                flags[0] |= InstallFlags.failed
+            finally:
+                flags[0] |= InstallFlags.finished
+
+                # Clean up temporary files
+                directory = Path(self.var_installation_dir.get())
+                (directory / "downloaded.zip").unlink(missing_ok=True)
+
+                temp_dir = directory / "downloaded"
+
+                for file in temp_dir.rglob("*"):
+                    file.chmod(stat.S_IRWXU)
+
+                shutil.rmtree(temp_dir)
+
+        Thread(target=try_install, daemon=True, kwargs={"flags": flags}).start()
 
         def _check_flags():
             nonlocal flags
-            if flags[0]:
+
+            if flags[0] & InstallFlags.failed:
+                # The installation failed
+                print("failed")
+                self.root.attributes("-disabled", False)
+                self.main_frame.place_forget()
+                self.failed_frame.place(
+                    x=0,
+                    y=0,
+                    width=self.root.winfo_width(),
+                    height=self.root.winfo_height(),
+                )
+            elif (
+                flags[0] & InstallFlags.finished and not flags[0] & InstallFlags.failed
+            ):
                 # The installation is complete
                 self.root.attributes("-disabled", False)
                 self.main_frame.place_forget()
@@ -217,38 +359,92 @@ class App:
 
         _check_flags()
 
-    def install(self, *, flags):
+    def _retry(self):
+        self.e_installation_dir.configure(state="normal")
+        self.b_choose_installation_dir.configure(state="normal")
+        self.b_create_desktop_shortcut.configure(state="normal")
+        self.b_create_autostart.configure(state="normal")
+        self.b_start_menu.configure(state="normal")
+        self.b_cancel.configure(state="normal")
+        self.b_install.configure(state="normal")
+
+        self.failed_frame.place_forget()
+
+        self.main_frame.place(
+            x=0,
+            y=0,
+            width=self.root.winfo_width(),
+            height=self.root.winfo_height(),
+        )
+
+    def install(self):
         directory = Path(self.var_installation_dir.get())
         if directory.exists():
             for file in directory.rglob("*"):
-                print(file)
+                # print(file)
                 file.chmod(stat.S_IRWXU)
 
             directory.chmod(stat.S_IRWXU)
             shutil.rmtree(directory)
 
-        directory.mkdir()
+        directory.mkdir(exist_ok=True)
 
-        out = subprocess.run(
-            ["wget", r"https://github.com/MrHxID/Watch/blob/main/main.py"],
-            capture_output=True,
-            shell=True,
+        subprocess.run(
+            [
+                "powershell",
+                "-Command",
+                "wget",
+                "-UseBasicParsing",
+                "-Uri",
+                '"https://github.com/MrHxID/Watch/archive/refs/heads/main.zip"',
+                "-OutFile",
+                f'"{directory / "downloaded.zip"}"',
+            ],
+            timeout=60,
         )
-        print(out)
 
-        for file in (directory / ".git").rglob("*"):
-            file.chmod(stat.S_IRWXU)
+        subprocess.run(
+            [
+                "powershell",
+                "-Command",
+                "cd",
+                f'"{directory}";&',
+                "Expand-Archive",
+                "downloaded.zip",
+                "-Force",
+            ],
+            timeout=60,
+        )
 
-        shutil.rmtree(directory / ".git")
+        repo = next((directory / "downloaded").glob("*"))
 
+        # * Hardcoded version
+        # ! deprecated
+        # for file in (temp_dir / "downloaded" / "Watch-main").glob("*"):
+        # * when unpacking there is only one subdirectory "Watch-main". However since the
+        # * name of this directory might change it's better to use the first subdirectory
+        # * instead
+
+        for file in repo.glob("*"):
+            # ///     print(file)
+            shutil.move(file, directory)
+
+        # ! deprecated no longer includes ".git" folder
+        # // for file in (directory / ".git").rglob("*"):
+        # //     file.chmod(stat.S_IRWXU)
+
+        # // shutil.rmtree(directory / ".git")
+
+        # Desktop Shortcut
         if self.var_create_desktop_shortcut.get():
             self._create_shortcut(
-                Path.home().joinpath("Desktop", "Tangente Neomatik.lnk")
+                self.home_path.joinpath("Desktop", "Tangente Neomatik.lnk")
             )
 
+        # Auto Start
         if self.var_autostart.get():
             self._create_shortcut(
-                Path.home().joinpath(
+                self.home_path.joinpath(
                     "AppData",
                     "Roaming",
                     "Microsoft",
@@ -260,8 +456,9 @@ class App:
                 )
             )
 
+        # Start Menu
         if self.var_start_menu.get():
-            start_menu = Path.home().joinpath(
+            start_menu = self.home_path.joinpath(
                 "AppData",
                 "Roaming",
                 "Microsoft",
@@ -273,10 +470,8 @@ class App:
 
             self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
 
-        flags[0] = True
-
     def _create_shortcut(self, path: Path):
-        shell = win32com.client.Dispatch("WScript.Shell")
+        shell = win32com.client.Dispatch("WScript.Shell", pythoncom.CoInitialize())
         shortcut = shell.CreateShortCut(str(path))
         shortcut.targetpath = str(
             Path(self.var_installation_dir.get()).joinpath("Tangente Neomatik.exe")
@@ -285,8 +480,23 @@ class App:
 
 
 if not pyuac.isUserAdmin():
-    pyuac.runAsAdmin()
+    pyuac.runAsAdmin(
+        cmdLine=[sys.executable]
+        + sys.argv
+        + ["--browser", get_default_browser(), "--home-path", Path.home()]
+    )
 
 else:
-    app = App()
+    if "--browser" in sys.argv:
+        os.environ["PATH"] += ";" + str(
+            Path(sys.argv[sys.argv.index("--browser") + 1]).parent
+        )
+
+    if "--home-path" in sys.argv:
+        home_path = sys.argv[sys.argv.index("--home-path") + 1]
+
+    else:
+        home_path = Path.home()
+
+    app = App(home_path=home_path)
     app.root.mainloop()
