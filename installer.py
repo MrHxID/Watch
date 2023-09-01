@@ -1,4 +1,3 @@
-# import base64
 import enum
 import logging
 import os
