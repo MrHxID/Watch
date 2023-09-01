@@ -377,32 +377,12 @@ class App:
 
         directory.mkdir(exist_ok=True)
 
-        subprocess.run(
-            [
-                "powershell",
-                "-Command",
-                "wget",
-                "-UseBasicParsing",
-                "-Uri",
-                '"https://raw.githubusercontent.com/MrHxID/Watch/main/Tangente Neomatik.exe"',
-                "-OutFile",
-                f'"{directory / "Tangente Neomatik.exe"}"',
-            ],
-            timeout=120,
-        )
-        subprocess.run(
-            [
-                "powershell",
-                "-Command",
-                "wget",
-                "-UseBasicParsing",
-                "-Uri",
-                '"https://raw.githubusercontent.com/MrHxID/Watch/main/Installer.exe"',
-                "-OutFile",
-                f'"{directory / "Installer.exe"}"',
-            ],
-            timeout=120,
-        )
+        self._download_file("Tangente Neomatik.exe")
+        self._download_file("Installer.exe")
+
+        (directory / "settings").mkdir(exist_ok=True)
+
+        self._download_file("settings/settings.json")
 
         # Desktop Shortcut
         if self.var_create_desktop_shortcut.get():
@@ -439,12 +419,33 @@ class App:
 
             self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
 
+    def _download_file(self, rel_path: Path, timeout=120):
+        directory = Path(self.var_installation_dir.get())
+
+        github_base = "https://raw.githubusercontent.com/MrHxID/Watch/main/"
+
+        uri = github_base + Path(rel_path).as_posix()
+        subprocess.run(
+            [
+                "powershell",
+                "-Command",
+                "wget",
+                "-UseBasicParsing",
+                "-Uri",
+                f'"{uri}"',
+                "-OutFile",
+                f'"{directory / rel_path}"',
+            ],
+            timeout=timeout,
+        )
+
     def _create_shortcut(self, path: Path):
         shell = win32com.client.Dispatch("WScript.Shell", pythoncom.CoInitialize())
         shortcut = shell.CreateShortCut(str(path))
-        shortcut.targetpath = str(
+        shortcut.Targetpath = str(
             Path(self.var_installation_dir.get()).joinpath("Tangente Neomatik.exe")
         )
+        shortcut.WorkingDirectory = self.var_installation_dir.get()
         shortcut.save()
 
 
