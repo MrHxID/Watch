@@ -5,7 +5,9 @@ from typing import Any
 
 
 def _file():
-    return Path.cwd().joinpath("settings", "settings.json")
+    path = Path.cwd() / "settings"
+    path.mkdir(exist_ok=True)
+    return path / "settings.json"
 
 
 def load() -> dict[str, Any]:
@@ -18,6 +20,8 @@ def load() -> dict[str, Any]:
 
     ret = default()
     ret.update(settings)
+
+    set(ret)
 
     return ret
 
