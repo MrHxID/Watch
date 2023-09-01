@@ -399,7 +399,7 @@ class App:
                 "-OutFile",
                 f'"{directory / "downloaded.zip"}"',
             ],
-            timeout=60,
+            timeout=120,
         )
 
         subprocess.run(
@@ -425,14 +425,8 @@ class App:
         # * instead
 
         for file in repo.glob("*"):
-            # ///     print(file)
+            # //     print(file)
             shutil.move(file, directory)
-
-        # ! deprecated no longer includes ".git" folder
-        # // for file in (directory / ".git").rglob("*"):
-        # //     file.chmod(stat.S_IRWXU)
-
-        # // shutil.rmtree(directory / ".git")
 
         # Desktop Shortcut
         if self.var_create_desktop_shortcut.get():
@@ -468,6 +462,21 @@ class App:
             start_menu.mkdir(exist_ok=True)
 
             self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
+
+        # Removing Unneccesary Files
+        for file in directory.rglob("*.py"):
+            file.chmod(stat.S_IRWXU)
+            file.unlink()
+
+        for file in directory.rglob("*.bat"):
+            file.chmod(stat.S_IRWXU)
+            file.unlink()
+
+        shutil.rmtree(directory / "src")
+        shutil.rmtree(directory / "assets")
+        shutil.rmtree(directory / "tests")
+        (directory / ".gitignore").unlink(missing_ok=True)
+        (directory / "requirements.txt").unlink(missing_ok=True)
 
     def _create_shortcut(self, path: Path):
         shell = win32com.client.Dispatch("WScript.Shell", pythoncom.CoInitialize())
