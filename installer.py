@@ -409,7 +409,8 @@ class App:
                 '"https://github.com/MrHxID/Watch/archive/refs/heads/main.zip"',
                 "-OutFile",
                 f'"{directory / "downloaded.zip"}"',
-            ]
+            ],
+            timeout=60,
         )
 
         subprocess.run(
@@ -421,7 +422,8 @@ class App:
                 "Expand-Archive",
                 "downloaded.zip",
                 "-Force",
-            ]
+            ],
+            timeout=60,
         )
 
         repo = next((directory / "downloaded").glob("*"))
