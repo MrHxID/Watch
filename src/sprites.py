@@ -1,10 +1,19 @@
-import pygame as pg
+import sys
 from pathlib import Path
+
+import pygame as pg
 
 
 def load_sheet(file: str):
     try:
-        path = Path.cwd().joinpath("assets", file)
+        try:
+            # use pyinstallers --add-data
+            base_path = Path(sys._MEIPASS)
+        except:
+            base_path = Path.cwd()
+
+        path = base_path / "assets" / file
+
         sheet = pg.image.load(path)
     except FileNotFoundError as err:
         raise FileNotFoundError(f"Could not find the sprite sheet: {''.join(err.args)}")
