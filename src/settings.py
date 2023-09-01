@@ -18,6 +18,9 @@ def load() -> dict[str, Any]:
         set(default())
         return load()
 
+    except PermissionError:
+        return default()
+
     ret = default()
     ret.update(settings)
 
@@ -31,8 +34,11 @@ def set(new_settings: dict):
     them available in `src.settings_dict`."""
 
     new_settings = dict(new_settings)
-    with open(_file(), "w") as file:
-        json.dump(new_settings, file, indent=4)
+    try:
+        with open(_file(), "w") as file:
+            json.dump(new_settings, file, indent=4)
+    except PermissionError:
+        pass
         set_str = """// Die 'fps' - Werte geben Maximalwerte für die Bildfrequenz des Programms an.
 // Höhere Werte entsprechen einer geschmeidigeren Anzeige, niedrige Werte
 // reduzieren den Stromverbrauch und die benötigte Rechenleistung.
