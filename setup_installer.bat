@@ -4,4 +4,5 @@ pyinstaller installer.py --clean ^
     --name "Installer" ^
     --add-data "assets\icon.ico;assets" ^
     --icon "assets\icon.ico" ^
-    --version-file "version installer.rc"
+    --version-file "version installer.rc" ^
+    

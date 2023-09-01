@@ -6,4 +6,5 @@ pyinstaller main.py --clean ^
     --add-data "assets\Sprites.png;assets" ^
     --add-data "settings\settings.json;settings" ^
     --icon "assets\icon.ico" ^
-    --version-file "version main.rc"
+    --version-file "version main.rc" ^
+    
