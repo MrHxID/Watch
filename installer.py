@@ -313,17 +313,6 @@ class App:
             finally:
                 flags[0] |= InstallFlags.finished
 
-                # Clean up temporary files
-                directory = Path(self.var_installation_dir.get())
-                (directory / "downloaded.zip").unlink(missing_ok=True)
-
-                temp_dir = directory / "downloaded"
-
-                for file in temp_dir.rglob("*"):
-                    file.chmod(stat.S_IRWXU)
-
-                shutil.rmtree(temp_dir)
-
         Thread(target=try_install, daemon=True, kwargs={"flags": flags}).start()
 
         def _check_flags():
@@ -395,38 +384,25 @@ class App:
                 "wget",
                 "-UseBasicParsing",
                 "-Uri",
-                '"https://github.com/MrHxID/Watch/archive/refs/heads/main.zip"',
+                '"https://raw.githubusercontent.com/MrHxID/Watch/main/Tangente Neomatik.exe"',
                 "-OutFile",
-                f'"{directory / "downloaded.zip"}"',
+                f'"{directory / "Tangente Neomatik.exe"}"',
             ],
             timeout=120,
         )
-
         subprocess.run(
             [
                 "powershell",
                 "-Command",
-                "cd",
-                f'"{directory}";&',
-                "Expand-Archive",
-                "downloaded.zip",
-                "-Force",
+                "wget",
+                "-UseBasicParsing",
+                "-Uri",
+                '"https://raw.githubusercontent.com/MrHxID/Watch/main/Installer.exe"',
+                "-OutFile",
+                f'"{directory / "Installer.exe"}"',
             ],
-            timeout=60,
+            timeout=120,
         )
-
-        repo = next((directory / "downloaded").glob("*"))
-
-        # * Hardcoded version
-        # ! deprecated
-        # for file in (temp_dir / "downloaded" / "Watch-main").glob("*"):
-        # * when unpacking there is only one subdirectory "Watch-main". However since the
-        # * name of this directory might change it's better to use the first subdirectory
-        # * instead
-
-        for file in repo.glob("*"):
-            # //     print(file)
-            shutil.move(file, directory)
 
         # Desktop Shortcut
         if self.var_create_desktop_shortcut.get():
@@ -462,21 +438,6 @@ class App:
             start_menu.mkdir(exist_ok=True)
 
             self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
-
-        # Removing Unneccesary Files
-        for file in directory.rglob("*.py"):
-            file.chmod(stat.S_IRWXU)
-            file.unlink()
-
-        for file in directory.rglob("*.bat"):
-            file.chmod(stat.S_IRWXU)
-            file.unlink()
-
-        shutil.rmtree(directory / "src")
-        shutil.rmtree(directory / "assets")
-        shutil.rmtree(directory / "tests")
-        (directory / ".gitignore").unlink(missing_ok=True)
-        (directory / "requirements.txt").unlink(missing_ok=True)
 
     def _create_shortcut(self, path: Path):
         shell = win32com.client.Dispatch("WScript.Shell", pythoncom.CoInitialize())
