@@ -419,7 +419,7 @@ class App:
 
             self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
 
-    def _download_file(self, rel_path: Path, timeout=120):
+    def _download_file(self, rel_path: Path, timeout=180):
         directory = Path(self.var_installation_dir.get())
 
         github_base = "https://raw.githubusercontent.com/MrHxID/Watch/main/"
@@ -436,6 +436,7 @@ class App:
                 "-OutFile",
                 f'"{directory / rel_path}"',
             ],
+            shell=True,
             timeout=timeout,
         )
 
