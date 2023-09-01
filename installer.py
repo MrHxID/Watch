@@ -313,17 +313,6 @@ class App:
             finally:
                 flags[0] |= InstallFlags.finished
 
-                # Clean up temporary files
-                directory = Path(self.var_installation_dir.get())
-                (directory / "downloaded.zip").unlink(missing_ok=True)
-
-                temp_dir = directory / "downloaded"
-
-                for file in temp_dir.rglob("*"):
-                    file.chmod(stat.S_IRWXU)
-
-                shutil.rmtree(temp_dir)
-
         Thread(target=try_install, daemon=True, kwargs={"flags": flags}).start()
 
         def _check_flags():
@@ -388,51 +377,12 @@ class App:
 
         directory.mkdir(exist_ok=True)
 
-        subprocess.run(
-            [
-                "powershell",
-                "-Command",
-                "wget",
-                "-UseBasicParsing",
-                "-Uri",
-                '"https://github.com/MrHxID/Watch/archive/refs/heads/main.zip"',
-                "-OutFile",
-                f'"{directory / "downloaded.zip"}"',
-            ],
-            timeout=60,
-        )
+        self._download_file("Tangente Neomatik.exe")
+        self._download_file("Installer.exe")
 
-        subprocess.run(
-            [
-                "powershell",
-                "-Command",
-                "cd",
-                f'"{directory}";&',
-                "Expand-Archive",
-                "downloaded.zip",
-                "-Force",
-            ],
-            timeout=60,
-        )
+        (directory / "settings").mkdir(exist_ok=True)
 
-        repo = next((directory / "downloaded").glob("*"))
-
-        # * Hardcoded version
-        # ! deprecated
-        # for file in (temp_dir / "downloaded" / "Watch-main").glob("*"):
-        # * when unpacking there is only one subdirectory "Watch-main". However since the
-        # * name of this directory might change it's better to use the first subdirectory
-        # * instead
-
-        for file in repo.glob("*"):
-            # ///     print(file)
-            shutil.move(file, directory)
-
-        # ! deprecated no longer includes ".git" folder
-        # // for file in (directory / ".git").rglob("*"):
-        # //     file.chmod(stat.S_IRWXU)
-
-        # // shutil.rmtree(directory / ".git")
+        self._download_file("settings/settings.json")
 
         # Desktop Shortcut
         if self.var_create_desktop_shortcut.get():
@@ -469,12 +419,33 @@ class App:
 
             self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
 
+    def _download_file(self, rel_path: Path, timeout=120):
+        directory = Path(self.var_installation_dir.get())
+
+        github_base = "https://raw.githubusercontent.com/MrHxID/Watch/main/"
+
+        uri = github_base + Path(rel_path).as_posix()
+        subprocess.run(
+            [
+                "powershell",
+                "-Command",
+                "wget",
+                "-UseBasicParsing",
+                "-Uri",
+                f'"{uri}"',
+                "-OutFile",
+                f'"{directory / rel_path}"',
+            ],
+            timeout=timeout,
+        )
+
     def _create_shortcut(self, path: Path):
         shell = win32com.client.Dispatch("WScript.Shell", pythoncom.CoInitialize())
         shortcut = shell.CreateShortCut(str(path))
-        shortcut.targetpath = str(
+        shortcut.Targetpath = str(
             Path(self.var_installation_dir.get()).joinpath("Tangente Neomatik.exe")
         )
+        shortcut.WorkingDirectory = self.var_installation_dir.get()
         shortcut.save()
 
 

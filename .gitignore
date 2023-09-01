@@ -12,3 +12,4 @@ src/test2.py
 *.png~
 *.spec
 *.log
+*.rc
