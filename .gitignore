@@ -13,3 +13,4 @@ src/test2.py
 *.spec
 *.log
 *.rc
+*.bat
