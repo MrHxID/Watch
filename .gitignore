@@ -11,3 +11,6 @@ src/test2.py
 *.xcf
 *.png~
 *.spec
+*.log
+*.rc
+*.bat
