@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from pathlib import Path
 import pyuac
@@ -127,7 +128,14 @@ class App:
         ).unlink(missing_ok=True)
 
         # ! VERY DANGEROUS
-        shutil.rmtree(Path.cwd())
+        if getattr(sys, "frozen", False):
+            file = sys.executable
+        else:
+            file = __file__
+        file = Path(file)
+        file.unlink()
+        file.parent.rmdir()
+        # shutil.rmtree(Path.cwd())
 
         self.root.quit()
 
