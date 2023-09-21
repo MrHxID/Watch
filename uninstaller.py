@@ -134,7 +134,8 @@ class App:
         else:
             file = __file__
         file = Path(file)
-        subprocess.run(f'ping localhost -n 3 > nul & del "{file}"', shell=True)
+        proc = subprocess.run(f'ping localhost -n 3 > nul & del "{file}"', shell=True)
+        raise RuntimeError(proc)
         # shutil.rmtree(Path.cwd())
 
         self.root.quit()
