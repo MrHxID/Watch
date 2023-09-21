@@ -2,6 +2,7 @@ import tkinter as tk
 from pathlib import Path
 import pyuac
 import sys
+import shutil
 
 
 class App:
@@ -124,6 +125,9 @@ class App:
             "Programs",
             "Tangente Neomatik.lnk",
         ).unlink(missing_ok=True)
+
+        # ! VERY DANGEROUS
+        shutil.rmtree(Path.cwd())
 
         self.root.quit()
 
