@@ -135,7 +135,10 @@ class App:
             file = __file__
         file = Path(file)
         proc = subprocess.run(f'ping localhost -n 3 > nul & del "{file}"', shell=True)
-        raise RuntimeError(proc)
+        with open("log.txt", "w") as _file:
+            _file.write(str(proc))
+
+        raise RuntimeError
         # shutil.rmtree(Path.cwd())
 
         self.root.quit()
