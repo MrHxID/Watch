@@ -133,7 +133,7 @@ class App:
             file = sys.executable
         else:
             file = __file__
-        file = Path(file)
+
         proc = subprocess.run(
             f'cmd /c ping localhost -n 3 > nul & del "{file}"', shell=True
         )
