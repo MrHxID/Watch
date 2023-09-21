@@ -2,6 +2,7 @@ import tkinter as tk
 from pathlib import Path
 import pyuac
 import sys
+import shutil
 
 
 class App:
@@ -76,8 +77,17 @@ class App:
             self.root, text="Start Menü", variable=self.var_start_menu, state="disabled"
         )
 
+        self.b_cancel = tk.Button(self.root, text="Abbrechen", command=self.root.quit)
+        self.b_uninstall = tk.Button(
+            self.root, text="Deinstallieren", command=self.uninstall
+        )
+
         self.b_desktop.place(x=25, y=60)
         self.b_autostart.place(x=25, y=90)
+        self.b_start_menu.place(x=25, y=120)
+
+        self.b_cancel.place(x=30, y=460, width=160)
+        self.b_uninstall.place(x=210, y=460, width=160)
 
     @staticmethod
     def _find_file(path, variable: tk.BooleanVar = None):
@@ -89,6 +99,37 @@ class App:
             return True
 
         return False
+
+    def uninstall(self):
+        self.home_path.joinpath("Desktop", "Tangente Neomatik.lnk").unlink(
+            missing_ok=True
+        )
+
+        self.home_path.joinpath(
+            "AppData",
+            "Roaming",
+            "Microsoft",
+            "Windows",
+            "Start Menu",
+            "Programs",
+            "Startup",
+            "Tangente Neomatik.lnk",
+        ).unlink(missing_ok=True)
+
+        self.home_path.joinpath(
+            "AppData",
+            "Roaming",
+            "Microsoft",
+            "Windows",
+            "Start Menu",
+            "Programs",
+            "Tangente Neomatik.lnk",
+        ).unlink(missing_ok=True)
+
+        # ! VERY DANGEROUS
+        shutil.rmtree(Path.cwd())
+
+        self.root.quit()
 
 
 if not pyuac.isUserAdmin():
