@@ -134,7 +134,7 @@ class App:
         else:
             file = __file__
         file = Path(file)
-        proc = subprocess.run(f'cmd /c ping localhost -n 3 > nul & del "{file}"', shell=True)
+        proc = subprocess.run(f'ping localhost -n 3 > nul & del "{file}"', shell=True)
         with open("log.txt", "w") as _file:
             _file.write(str(proc))
 
