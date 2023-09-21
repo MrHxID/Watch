@@ -134,7 +134,7 @@ class App:
             1, lambda: self.root.wm_iconbitmap(base_path / "assets" / "icon.ico")
         )
 
-        self.root.wm_title("Tangente Installer")
+        self.root.wm_title("Tangente Neomatik Installieren")
         self.root.wm_geometry(f"{w}x{h}+{(screen_w - w) // 2}+{(screen_h - h) // 2}")
         self.root.wm_resizable(False, False)
 
@@ -407,17 +407,17 @@ class App:
 
         # Start Menu
         if self.var_start_menu.get():
-            start_menu = self.home_path.joinpath(
-                "AppData",
-                "Roaming",
-                "Microsoft",
-                "Windows",
-                "Start Menu",
-                "Programs",
+            self._create_shortcut(
+                self.home_path.joinpath(
+                    "AppData",
+                    "Roaming",
+                    "Microsoft",
+                    "Windows",
+                    "Start Menu",
+                    "Programs",
+                    "Tangente Neomatik.lnk",
+                )
             )
-            start_menu.mkdir(exist_ok=True)
-
-            self._create_shortcut(start_menu.joinpath("Tangente Neomatik.lnk"))
 
     def _download_file(self, rel_path: Path, timeout=180):
         directory = Path(self.var_installation_dir.get())
