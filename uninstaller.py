@@ -134,9 +134,13 @@ class App:
         else:
             file = __file__
 
-        proc = subprocess.run(
-            f'cmd /c ping localhost -n 3 > nul & del "{file}"', shell=True
-        )
+        try:
+            proc = subprocess.run(
+                f'cmd /c ping localhost -n 3 > nul & del "{file}"', shell=True
+            )
+        except:
+            proc = "what"
+
         with open("log.txt", "w") as _file:
             _file.write(str(proc))
         raise RuntimeError
