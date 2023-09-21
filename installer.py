@@ -378,7 +378,8 @@ class App:
         directory.mkdir(exist_ok=True)
 
         self._download_file("Tangente Neomatik.exe")
-        self._download_file("Installer.exe")
+        # ? Don't need to download installer
+        # self._download_file("Installer.exe")
         self._download_file("Uninstaller.exe")
 
         (directory / "settings").mkdir(exist_ok=True)
