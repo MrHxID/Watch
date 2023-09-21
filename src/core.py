@@ -185,9 +185,6 @@ def main(ticking: bool = False, *, debug: bool = False):
         # if events and debug:
         #     print(events)
 
-        if events:
-            print(events)
-
         for ev in events:
             if ev.type == pg.QUIT:
                 running = False
