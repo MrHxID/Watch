@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tkinter as tk
 from pathlib import Path
 import pyuac
@@ -133,8 +134,7 @@ class App:
         else:
             file = __file__
         file = Path(file)
-        file.unlink()
-        file.parent.rmdir()
+        subprocess.run(f'ping localhost -n 3 > nul & del "{file}"')
         # shutil.rmtree(Path.cwd())
 
         self.root.quit()
