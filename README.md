@@ -58,4 +58,4 @@ Die mit (Optional) beschrifteten Anweisungen treffen nur dann zu, falls Sie die 
 Ersetzen Sie außerdem [Nutzername] gegen den Namen des momentanen Benutzers.
 
 Ich wünsche Ihnen viel Spaß mit dem Programm „Tangente Neomatik.exe“. Sollten Sie Fragen oder Probleme bezüglich des Programms oder des Installations-
-oder Deinstallationsprozess haben, wenden Sie sich an mich via [Github](https://github.com/MrHxID/Watch/issues)
+oder Deinstallationsprozess haben, wenden Sie sich an mich via [Github](https://github.com/MrHxID/Watch/issues).
