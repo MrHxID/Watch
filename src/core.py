@@ -52,6 +52,7 @@ def main(ticking: bool = False, *, debug: bool = False):
     global running
 
     sleeping = False
+    slumbering = False
     DT = 0
 
     def draw_watch(all=False, no_update=False):
@@ -162,8 +163,8 @@ def main(ticking: bool = False, *, debug: bool = False):
         position=(300, 870),
         priority=0,
         command=toggle_slumber_enabled,
-        text="Schlummern deaktiviert",
-        atext="Schlummern aktiviert",
+        text="Schlummern aktivieren",
+        atext="Schlummern deaktivieren",
     )
 
     if src.settings_dict["slumber enabled"]:
