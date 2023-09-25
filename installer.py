@@ -367,14 +367,6 @@ class App:
 
     def install(self):
         directory = Path(self.var_installation_dir.get())
-        if directory.exists():
-            for file in directory.rglob("*"):
-                # print(file)
-                file.chmod(stat.S_IRWXU)
-
-            directory.chmod(stat.S_IRWXU)
-            shutil.rmtree(directory)
-
         directory.mkdir(exist_ok=True)
 
         self._download_file("Tangente Neomatik.exe")
