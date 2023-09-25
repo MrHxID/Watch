@@ -18,6 +18,10 @@ def load() -> dict[str, Any]:
         set(default())
         return load()
 
+    except json.JSONDecodeError:
+        set(default())
+        return load()
+
     except PermissionError:
         return default()
 
