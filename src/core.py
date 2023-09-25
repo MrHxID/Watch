@@ -180,7 +180,7 @@ def main(ticking: bool = False, *, debug: bool = False):
     #     timing = []
 
     while running:
-        slumber_enabled = src.settings_dict["slumber enabled"]
+        slumber_enabled = bool(src.settings_dict["slumber enabled"])
 
         events = pg.event.get()
         # if events and debug:
