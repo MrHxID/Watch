@@ -1,9 +1,9 @@
+"Installer for the program"
+
 import enum
 import logging
 import os
 import re
-import shutil
-import stat
 import subprocess
 import sys
 import tkinter as tk
@@ -27,23 +27,25 @@ log = logging.getLogger("tangente neomatik")
 log.setLevel(logging.DEBUG)
 
 
-os.environ["PATH"] += ";C:\Program Files (x86)\Microsoft\Edge\Application"
+os.environ["PATH"] += r";C:\Program Files (x86)\Microsoft\Edge\Application"
 
 # print(os.getlogin())
 
 
 def get_default_browser():
+    "Returns the file path of the default browser."
+
     def get_browser_name() -> str:
         register_path = r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice"
         with OpenKey(HKEY_CURRENT_USER, register_path) as key:
             return str(QueryValueEx(key, "ProgId")[0])
 
-    def format_cmd(s: str) -> str:
-        exe_path = re.sub(r"(^.+exe)(.*)", r"\1", s)
+    def format_cmd(command: str) -> str:
+        exe_path = re.sub(r"(^.+exe)(.*)", r"\1", command)
         return exe_path.replace('"', "")
 
     def get_exe_path(name: str) -> str:
-        register_path = r"{}\shell\open\command".format(name)
+        register_path = rf"{name}\shell\open\command"
         fullpath = ""
         with OpenKey(HKEY_CLASSES_ROOT, register_path) as key:
             cmd = str(QueryValueEx(key, "")[0])
@@ -233,8 +235,8 @@ class App:
         ).place(x=200, y=20, anchor="n")
         tk.Label(
             self.failed_frame,
-            text='Mehr Informationen: Öffnen Sie die Datei "Tangente Neomatik.log". Melden Sie den Inhalt '
-            "der Datei als Problem unter",
+            text='Mehr Informationen: Öffnen Sie die Datei "Tangente Neomatik.log". Melden Sie den '
+            "Inhalt der Datei als Problem unter",
             wraplength=self.root.winfo_width() - 20,
             justify="left",
         ).place(x=10, y=60)
@@ -268,6 +270,9 @@ class App:
         # root.focus_set()
         # root.lift()
 
+    def start(self):
+        self.root.mainloop()
+
     def _set_installation_dir(self):
         dir = filedialog.askdirectory(
             initialdir=self.var_installation_dir.get(), mustexist=False
@@ -292,10 +297,12 @@ class App:
         def try_install(flags):
             try:
                 self.install()
-            except:
+            except Exception:
                 if not log.handlers:
                     log.addHandler(
-                        logging.StreamHandler(open("Tangente Neomatik.log", "a"))
+                        logging.StreamHandler(
+                            open("Tangente Neomatik.log", "a", encoding="utf-8")
+                        )
                     )
 
                 log.debug(traceback.format_exc())
@@ -431,6 +438,7 @@ class App:
             ],
             shell=True,
             timeout=timeout,
+            check=True,
         )
 
     def _create_shortcut(self, path: Path):
@@ -463,4 +471,4 @@ else:
         home_path = Path.home()
 
     app = App(home_path=home_path)
-    app.root.mainloop()
+    app.start()

@@ -218,7 +218,7 @@ class Date(BaseRender):
         sprite = date(dt.date.today().day)
         super().__init__(surface, sprite, position, priority, **kwargs)
 
-    def update(self, dt, **kwargs):
+    def update(self, *args, **kwargs):
         day = kwargs.get("datetime").day
 
         self.image = date(day)
@@ -303,6 +303,7 @@ def date(date: int):
     surface.blit(spr.NUMBERS[temp[1]], (39, 0))
 
     return surface
+
 
 all: dict[int, BaseRender] = {}
 buttons: list[int] = []
