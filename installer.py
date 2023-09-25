@@ -188,10 +188,10 @@ class App:
             self.main_frame, value=True, name="var_start_menu"
         )
         self.b_start_menu = tk.Checkbutton(
-            self.main_frame, text="Start Menü", variable=self.var_start_menu
+            self.main_frame, text="Start-Menü", variable=self.var_start_menu
         )
         self.t_start_menu = ToolTip(
-            self.b_start_menu, text="Zeigt das Programm im Windows Start Menü an."
+            self.b_start_menu, text="Zeigt das Programm im Windows Start-Menü an."
         )
 
         self.b_cancel = tk.Button(
