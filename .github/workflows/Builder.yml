@@ -1,7 +1,7 @@
 name: Create .exe
 
 on:
-  push:
+  workflow-dispatch:
 
 jobs:
   build-windows:
