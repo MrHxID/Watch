@@ -1,0 +1,16 @@
+﻿altgraph==0.17.3
+cachetools==5.3.1
+decorator==5.1.1
+numpy==1.25.2
+pefile==2023.2.7
+py2exe==0.13.0.0
+pygame==2.5.1
+pyinstaller==5.13.0
+pyinstaller-hooks-contrib==2023.7
+pypiwin32==223
+pyuac==0.0.3
+pywin32==306
+pywin32-ctypes==0.2.2
+scipy==1.11.2
+smmap==5.0.0
+tee==0.0.3
