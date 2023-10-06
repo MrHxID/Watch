@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-windows:
-    runs-on: windows-2023
+    runs-on: windows-2022
     steps:
       - name: Install Python
         uses: actions/setup-python@v1
