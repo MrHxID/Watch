@@ -20,7 +20,7 @@ jobs:
         run: dir
 
       - name: Install requirements
-        run: pip install -r requirements.txt
+        run: pip install -r ./requirements.txt
         
       - name: build main
         run: pyinstaller main.py --clean --windowed --onefile --name "Tangente Neomatik" --add-data "assets\icon.ico;assets" --add-data "assets\Sprites.png;assets" --add-data "settings\settings.json;settings" --icon "assets\icon.ico" --version-file "version main.rc" --distpath "."
