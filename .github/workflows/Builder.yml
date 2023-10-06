@@ -1,8 +1,5 @@
 name: Create .exe
 
-on:
-  manual:
-
 jobs:
   build-windows:
     runs-on: windows-2023
