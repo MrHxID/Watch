@@ -1,6 +1,7 @@
 name: Create .exe
 
-on: manual
+on:
+  manual:
 
 jobs:
   build-windows:
