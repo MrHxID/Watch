@@ -16,6 +16,9 @@ jobs:
       - name: Print directory
         run: cd
 
+      - name: Test
+        run dir
+
       - name: Install requirements
         run: pip install -r requirements.txt
         
