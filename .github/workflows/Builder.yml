@@ -12,12 +12,6 @@ jobs:
         with:
           python-version: '3.10'
           architecture: 'x64'
-          
-      - name: Print directory
-        run: cd
-
-      - name: Test
-        run: dir
 
       - name: Install requirements
         run: pip install -r ./requirements.txt
