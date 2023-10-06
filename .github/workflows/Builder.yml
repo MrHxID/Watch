@@ -29,10 +29,10 @@ jobs:
 
       - name: Setup git
         run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "Your Name"
+          git config --global user.email "leomi12042004@gmail.com"
+          git config --global user.name "Mr_HxID"
 
-      -name: Commit new files
+      - name: Commit new files
         run: |
           git add "Tangente Neomatik.exe"
           git commit -m "Auto generated .exe files"
