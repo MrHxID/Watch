@@ -1,0 +1,20 @@
+name: Create .exe
+
+on:
+  push:
+
+jobs:
+  build-windows:
+    runs-on: windows-2023
+    steps:
+      - name: Install Python
+        with:
+          python-version: '3.10'
+          architecture: 'x64'
+          
+      - name: Install requirements
+        run: pip install -r requirements.txt
+        
+      - name: build main
+        run: pyinstaller main.py --clean --windowed --onefile --name "Tangente Neomatik" --add-data "assets\icon.ico;assets" --add-data "assets\Sprites.png;assets" --add-data "settings\settings.json;settings" --icon "assets\icon.ico" --version-file "version main.rc" --distpath "."
+      
