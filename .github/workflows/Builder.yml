@@ -37,4 +37,5 @@ jobs:
           git branch
           git add "Tangente Neomatik.exe"
           git commit -m "Auto generated .exe files"
+          git push
       
