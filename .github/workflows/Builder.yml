@@ -37,7 +37,6 @@ jobs:
 
       - name: Commit new files
         run: |
-          git branch
           git add "Tangente Neomatik.exe"
           git add "Installer.exe"
           git commit -m "Auto generated .exe files"
