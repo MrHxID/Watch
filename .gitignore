@@ -14,3 +14,4 @@ src/test2.py
 *.log
 *.rc
 *.bat
+*.exe
