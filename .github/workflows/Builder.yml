@@ -2,6 +2,8 @@ name: Create .exe
 
 on:
   workflow_dispatch:
+permissions:
+  contents: write
 
 jobs:
   build-windows:
@@ -26,15 +28,17 @@ jobs:
       - name: build main
         run: |
           pyinstaller main.py --clean --windowed --onefile --name "Tangente Neomatik" --add-data "assets\icon.ico;assets" --add-data "assets\Sprites.png;assets" --add-data "settings\settings.json;settings" --icon "assets\icon.ico" --version-file "version main.rc" --distpath "."
+          pyinstaller installer.py --clean --windowed --onefile --name "Installer" --add-data "assets\icon.ico;assets" --icon "assets\icon.ico" --version-file "version installer.rc" --distpath "."
 
       - name: Setup git
         run: |
-          git config --global user.email "leomi12042004@gmail.com"
-          git config --global user.name "Mr_HxID"
+          git config --global user.name "Bob the Builder"
+          git config --global user.email "ImNotABot@gmail.com"
 
       - name: Commit new files
         run: |
-          git branch
           git add "Tangente Neomatik.exe"
+          git add "Installer.exe"
           git commit -m "Auto generated .exe files"
+          git push
       
