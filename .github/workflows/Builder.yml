@@ -28,6 +28,7 @@ jobs:
       - name: build main
         run: |
           pyinstaller main.py --clean --windowed --onefile --name "Tangente Neomatik" --add-data "assets\icon.ico;assets" --add-data "assets\Sprites.png;assets" --add-data "settings\settings.json;settings" --icon "assets\icon.ico" --version-file "version main.rc" --distpath "."
+          pyinstaller installer.py --clean --windowed --onefile --name "Installer" --add-data "assets\icon.ico;assets" --icon "assets\icon.ico" --version-file "version installer.rc" --distpath "."
 
       - name: Setup git
         run: |
@@ -38,6 +39,7 @@ jobs:
         run: |
           git branch
           git add "Tangente Neomatik.exe"
+          git add "Installer.exe"
           git commit -m "Auto generated .exe files"
           git push
       
