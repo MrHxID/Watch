@@ -32,8 +32,8 @@ jobs:
 
       - name: Setup git
         run: |
-          git config --global user.email "leomi12042004@gmail.com"
-          git config --global user.name "Mr_HxID"
+          git config --global user.name "Bob the Builder"
+          git config --global user.email "ImNotABot@gmail.com"
 
       - name: Commit new files
         run: |
