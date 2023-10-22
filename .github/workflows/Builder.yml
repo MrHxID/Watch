@@ -2,11 +2,16 @@ name: Create .exe
 
 on:
   workflow_dispatch:
+
+  push:
+
 permissions:
   contents: write
 
 jobs:
   build-windows:
+    if: github.actor == "MrHxID"
+    
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v2
