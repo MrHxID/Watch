@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-windows:
-    if: github.actor == "MrHxID"
+    if: github.actor == 'MrHxID'
     
     runs-on: windows-2022
     steps:
