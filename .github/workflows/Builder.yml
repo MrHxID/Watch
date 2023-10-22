@@ -2,7 +2,7 @@ name: Create .exe
 
 on:
   workflow_dispatch:
-
+  
   push:
 
 permissions:
