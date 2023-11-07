@@ -126,6 +126,7 @@ def main(ticking: bool = False, *, debug: bool = False):
     u.ClockHand(
         SCREEN, spr.SECONDS_HAND, SECOND_POS + BLIT_OFFSET, "second", 0, ticking=ticking
     )
+    u.BaseRender(SCREEN, spr.AXLE, AXLE_POS + BLIT_OFFSET, 5)
     # u.BaseRender(SCREEN, u.date(18), DATE_POS + BLIT_OFFSET, 0, anchor="topleft")
     u.Shadow(
         SCREEN,
