@@ -55,7 +55,7 @@ Alternativ können Sie den Ordner „C:/Users/[NUTZERNAME]/AppData/Roaming/Micro
 Folgen Sie den Anweisungen von 3. und navigieren Sie in den darüberliegenden Ordner „Programs“.
 
 Die mit (Optional) beschrifteten Anweisungen treffen nur dann zu, falls Sie die entsprechenden Verknüpfungen im Installationsprozess angegeben haben.
-Ersetzen Sie außerdem [Nutzername] gegen den Namen des momentanen Benutzers.
+Ersetzen Sie außerdem [NUTZERNAME] gegen den Namen des momentanen Benutzers.
 
 Ich wünsche Ihnen viel Spaß mit dem Programm „Tangente Neomatik.exe“. Sollten Sie Fragen oder Probleme bezüglich des Programms oder des Installations-
 oder Deinstallationsprozess haben, wenden Sie sich an mich via [Github](https://github.com/MrHxID/Watch/issues).
